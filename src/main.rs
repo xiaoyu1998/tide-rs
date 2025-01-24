@@ -2,24 +2,55 @@ use tokio::net::{TcpListener, TcpStream};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use std::env;
 
+use clap::{Parser, Subcommand};
+
+/// My Project with Subcommands
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    /// The subcommand to run
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Process an input file
+    Create {
+        /// Name of the input file
+        #[arg(short, long)]
+        numbers: u64,
+    },
+    // /// Convert a file to a specific format
+    // Convert {
+    //     /// Input file name
+    //     #[arg(short, long)]
+    //     input: String,
+
+    //     /// Output format
+    //     #[arg(short, long)]
+    //     format: String,
+    // },
+    /// start mm-tide
+    Start,
+}
+
+
 #[tokio::main]
 async fn main() -> tokio::io::Result<()> {
-    // Parse command-line arguments
-    let args: Vec<String> = env::args().collect();
+    let cli = Cli::parse();
 
-    if args.len() < 2 {
-        eprintln!("Usage: tide listen | tide start");
-        std::process::exit(1);
-    }
-
-    match args[1].as_str() {
-        "listen" => start_server().await,
-        "start" => send_command_to_server().await,
-        _ => {
-            eprintln!("Usage: tide listen | tide start");
-            std::process::exit(1);
+    match &cli.command {
+        Commands::Create { numbers } => {
+            let _ = send_command_to_server().await;
+        }
+        Commands::Start => {
+            let _ = start_server().await;
         }
     }
+
+     Ok(())
+
 }
 
 async fn start_server() -> tokio::io::Result<()> {
@@ -51,7 +82,7 @@ async fn handle_client(socket: TcpStream) -> tokio::io::Result<()> {
 
         let response = match command.as_str() {
             "help" => "Available commands: help, status, start, stop, quit\n".to_string(),
-            "status" => "Bot is running.\n".to_string(),
+            "create" => "Bot is running.\n".to_string(),
             "start" => "Market Maker started.\n".to_string(),
             "stop" => "Market Maker stopped.\n".to_string(),
             "quit" => "Goodbye!\n".to_string(),
