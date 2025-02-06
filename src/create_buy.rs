@@ -3,6 +3,8 @@ use std::io::Write;
 use std::sync::mpsc;
 use std::thread;
 
+use crate::utils;
+
 use anchor_client::{
     solana_client::rpc_client::RpcClient,
     solana_sdk::{
@@ -20,23 +22,43 @@ use pumpfun::{
     PumpFun,
     error::ClientError
 };
-use std::fs::File;
-use std::path::Path;
-use std::io::Read;
+// use std::fs::File;
+// use std::path::Path;
+// use std::io::Read;
 
-pub fn create_buy(
+// /// Function to load the Solana keypair from the given file path
+// fn load_keypair_from_file(path: &str) -> Result<Keypair, Box<dyn std::error::Error>> {
+//     // Resolve the home directory to handle "~"
+//     let expanded_path = shellexpand::tilde(path).to_string();
+//     let path = Path::new(&expanded_path);
+
+//     // Read the JSON file with the private key array
+//     let mut file = File::open(path)?;
+//     let mut private_key_bytes = Vec::new();
+//     file.read_to_end(&mut private_key_bytes)?;
+
+//     // Parse the file as a JSON array (assuming the private key is a JSON array of bytes)
+//     let private_key_vec: Vec<u8> = serde_json::from_slice(&private_key_bytes)?;
+
+//     // Deserialize the private key into a Keypair
+//     let keypair = Keypair::from_bytes(&private_key_vec)?;
+
+//     Ok(keypair)
+// }
+
+pub async fn execute(
     name: String,
     symbol: String,
     description: String,
     photo: String,
-    twitter: String,
-    telegram: String,
-    website: String,
+    twitter: Option<String>,
+    telegram: Option<String>,
+    website: Option<String>,
     amount_sol: u64
 ) {
 
     let path = "~/.config/solana/id.json";
-    let payer = load_keypair_from_file(path).expect("Failed to load keypair");
+    let payer = utils::load_keypair_from_file(path).expect("Failed to load keypair");
     let public_key = payer.pubkey();
     println!("Loaded Solana Address: {}", public_key);
 

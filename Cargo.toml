@@ -4,6 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+anchor-client = "0.30.1"
 clap = { version = "4.5.27", features = ["derive"]}
 tokio = { version = "1.33.0", features = ["full"] }
-anchor-client = "0.30.1"
+pumpfun = { path = "../pumpfun-rs/crates/pumpfun"}
+pumpfun-cpi = { path = "../pumpfun-rs/crates/pumpfun-cpi"}
+shellexpand = "2.0"
+serde_json = "1.0.137"
+rand = "0.9.0"

@@ -1,5 +1,7 @@
-mod account;
-use account::{create_account};
+mod create_account;
+mod create_buy;
+mod monitor_create_buy;
+mod utils;
 
 use tokio::net::{TcpListener, TcpStream};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -40,13 +42,13 @@ enum Commands {
         photo: String,  
 
         #[arg(short, long)]
-        twitter: String,  
+        twitter: Option<String>,  
 
         #[arg(short, long)]
-        telegram: String,  
+        telegram: Option<String>,  
 
         #[arg(short, long)]
-        website: String,  
+        website: Option<String>,  
 
         #[arg(short, long)]
         amount_sol: u64,             
@@ -79,7 +81,7 @@ async fn main() -> tokio::io::Result<()> {
 
     match &cli.command {
         Commands::Create { numbers } => {
-            let _ = create_account(*numbers);
+            let _ = create_account::execute(*numbers);
         }
         Commands::CreateBuy { 
             name,
@@ -91,19 +93,19 @@ async fn main() -> tokio::io::Result<()> {
             website,
             amount_sol
         } => {
-            let _ = create_buy(
-                *name,
-                *symbol,
-                *description,
-                *photo,
-                *twitter,
-                *telegram,
-                *website
+            let _ = create_buy::execute(
+                name.clone(),
+                symbol.clone(),
+                description.clone(),
+                photo.clone(),
+                twitter.clone(),
+                telegram.clone(),
+                website.clone(),
                 *amount_sol
             );
         }
         Commands::MonitorCreateBuy { amount_sol } => {
-            let _ = monitor_create_buy(*amount_sol);
+            let _ = monitor_create_buy::execute(*amount_sol);
         }
         Commands::Start => {
             //let _ = start_server().await;

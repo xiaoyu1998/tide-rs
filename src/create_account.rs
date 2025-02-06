@@ -16,7 +16,7 @@ use anchor_client::{
 pub const NUMBER_PER_WORKER: u64 = 100;
 pub const ACCOUNTS_TXT: &str = "accounts.txt";
 
-pub fn create_account(numbers: u64) {
+pub fn execute(numbers: u64) {
     //println!("numbers, {}!", numbers);
     let (tx, rx) = mpsc::channel();
     // let accounts_file = "accounts.txt";
