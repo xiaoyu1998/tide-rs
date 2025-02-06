@@ -105,7 +105,7 @@ async fn main() -> tokio::io::Result<()> {
             );
         }
         Commands::MonitorCreateBuy { amount_sol } => {
-            let _ = monitor_create_buy::execute(*amount_sol);
+            let _ = monitor_create_buy::execute(*amount_sol).await;
         }
         Commands::Start => {
             //let _ = start_server().await;
