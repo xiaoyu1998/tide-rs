@@ -18,11 +18,45 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Process an input file
+    /// Create accounts
     Create {
         /// Name of the input file
         #[arg(short, long)]
         numbers: u64,
+    },
+
+    /// Create Token and pumpfun pairs
+    CreateBuy{
+        #[arg(short, long)]
+        name: String,   
+
+        #[arg(short, long)]
+        symbol: String,    
+
+        #[arg(short, long)]
+        description: String,  
+
+        #[arg(short, long)]
+        photo: String,  
+
+        #[arg(short, long)]
+        twitter: String,  
+
+        #[arg(short, long)]
+        telegram: String,  
+
+        #[arg(short, long)]
+        website: String,  
+
+        #[arg(short, long)]
+        amount_sol: u64,             
+    },
+
+    /// Monitor pumpfun launch raydium and buy
+    MonitorCreateBuy {
+        /// Name of the input file
+        #[arg(short, long)]
+        amount_sol: u64,
     },
     // /// Convert a file to a specific format
     // Convert {
@@ -47,6 +81,30 @@ async fn main() -> tokio::io::Result<()> {
         Commands::Create { numbers } => {
             let _ = create_account(*numbers);
         }
+        Commands::CreateBuy { 
+            name,
+            symbol,
+            description,
+            photo,
+            twitter,
+            telegram,
+            website,
+            amount_sol
+        } => {
+            let _ = create_buy(
+                *name,
+                *symbol,
+                *description,
+                *photo,
+                *twitter,
+                *telegram,
+                *website
+                *amount_sol
+            );
+        }
+        Commands::MonitorCreateBuy { amount_sol } => {
+            let _ = monitor_create_buy(*amount_sol);
+        }
         Commands::Start => {
             //let _ = start_server().await;
         }
@@ -55,72 +113,3 @@ async fn main() -> tokio::io::Result<()> {
      Ok(())
 
 }
-
-// async fn start_server() -> tokio::io::Result<()> {
-//     let listener = TcpListener::bind("127.0.0.1:8080").await?;
-//     println!("Tide bot is listening on port 8080");
-
-//     loop {
-//         let (socket, addr) = listener.accept().await?;
-//         println!("New connection from: {}", addr);
-
-//         tokio::spawn(async move {
-//             if let Err(e) = handle_client(socket).await {
-//                 eprintln!("Error handling client {}: {}", addr, e);
-//             }
-//         });
-//     }
-// }
-
-// async fn handle_client(socket: TcpStream) -> tokio::io::Result<()> {
-//     let (reader, mut writer) = socket.into_split();
-//     let mut reader = BufReader::new(reader);
-//     let mut buffer = String::new();
-
-//     //writer.write_all(b"Welcome to Tide Bot server. Type 'help' for commands.\n").await?;
-
-//     while reader.read_line(&mut buffer).await? > 0 {
-//         let command = buffer.trim().to_string();
-//         println!("Received command: {}", command);
-
-//         let response = match command.as_str() {
-//             "help" => "Available commands: help, status, start, stop, quit\n".to_string(),
-//             "create" => "Bot is running.\n".to_string(),
-//             "start" => "Market Maker started.\n".to_string(),
-//             "stop" => "Market Maker stopped.\n".to_string(),
-//             "quit" => "Goodbye!\n".to_string(),
-//             _ => "Unknown command. Type 'help' for available commands.\n".to_string(),
-//         };
-//         //println!("response: {}", response);
-//         writer.write_all(response.as_bytes()).await?;
-//         buffer.clear();
-//         //println!("response: {}", response);
-
-//         if command == "quit" {
-//             break;
-//         }
-//     }
-
-//     Ok(())
-// }
-
-// async fn send_command_to_server() -> tokio::io::Result<()> {
-//     match TcpStream::connect("127.0.0.1:8080").await {
-//         Ok(mut stream) => {
-//             println!("Connected to the server.");
-//             let message = "start\n";
-//             stream.write_all(message.as_bytes()).await?;
-//             println!("Command sent: {}", message.trim());
-
-//             let mut reader = BufReader::new(stream);
-//             let mut response = String::new();
-//             reader.read_line(&mut response).await?;
-//             println!("Server response: {}", response.trim());
-//         }
-//         Err(e) => {
-//             eprintln!("Failed to connect to the server: {}", e);
-//         }
-//     }
-
-//     Ok(())
-// }
