@@ -2,6 +2,7 @@ mod create_account;
 mod create_buy;
 mod monitor_create_buy;
 mod utils;
+mod monitor;
 
 use tokio::net::{TcpListener, TcpStream};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};

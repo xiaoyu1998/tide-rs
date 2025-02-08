@@ -12,3 +12,4 @@ pumpfun-cpi = { path = "../pumpfun-rs/crates/pumpfun-cpi"}
 shellexpand = "2.0"
 serde_json = "1.0.137"
 rand = "0.9.0"
+solana-transaction-status = "1.18.26"
