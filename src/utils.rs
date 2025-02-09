@@ -27,3 +27,41 @@ pub fn load_keypair_from_file(path: &str) -> Result<Keypair, Box<dyn std::error:
 
     Ok(keypair)
 }
+
+#[derive(Debug)]
+pub struct Instruction {
+    pub action: String,
+    pub params: Option<String>,
+}
+
+pub fn get_instrs(log: &Vec<String>) -> Vec<Instruction> {
+    let mut instructions = Vec::new();
+    let mut extracted_param: Option<String> = None;
+
+    for entry in log.iter() {
+        if entry.starts_with("Program return: TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA") {
+            // Extract the last value after space
+            let parts: Vec<&str> = entry.split_whitespace().collect();
+            if let Some(param) = parts.last() {
+                extracted_param = Some(param.to_string());
+            }
+        } else if entry.contains("SellVestedTokens") {
+            instructions.push(Instruction { action: "sell".to_string(), params: None });
+        } else if entry.contains("CreateVestedToken") {
+            instructions.push(Instruction { action: "create".to_string(), params: None });
+        } else if entry.contains("Buy") {
+            instructions.push(Instruction { action: "buy".to_string(), params: None });
+        }
+    }
+
+    // Attach the extracted parameter to "create"
+    if let Some(param) = extracted_param {
+        for instr in instructions.iter_mut() {
+            if instr.action == "create" {
+                instr.params = Some(param.clone());
+            }
+        }
+    }
+
+    instructions
+}

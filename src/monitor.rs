@@ -18,51 +18,51 @@ use anchor_client::Cluster;
 use std::str::FromStr;
 use std::error::Error;
 
-// // Example function to extract UiParsedMessage
-// fn extract_parsed_message(message: UiMessage) -> Option<UiParsedMessage> {
-//     match message {
-//         UiMessage::Parsed(parsed) => Some(parsed),
-//         _ => None, // Return None if it's not a Parsed variant
-//     }
+use crate::utils;
+
+// async fn get_newest_slot(rpc_client: &RpcClient) -> Result<u64, Box<dyn Error>> {
+//     // Fetch the latest slot
+//     let latest_slot = rpc_client.get_slot()?;
+//     Ok(latest_slot)
 // }
 
-async fn get_newest_slot(rpc_client: &RpcClient) -> Result<u64, Box<dyn Error>> {
-    // Fetch the latest slot
-    let latest_slot = rpc_client.get_slot()?;
-    Ok(latest_slot)
-}
+// async fn get_signatures_for_program(
+//     rpc_client: &RpcClient,
+//     program_id: &Pubkey,
+//     start_slot: u64,
+//     end_slot: u64,
+// ) -> Result<Vec<Signature>, Box<dyn Error>> {
+//     let mut all_signatures = Vec::new();
+//     let mut current_slot = start_slot;
 
-async fn get_signatures_for_program(
-    rpc_client: &RpcClient,
-    program_id: &Pubkey,
-    start_slot: u64,
-    end_slot: u64,
-) -> Result<Vec<Signature>, Box<dyn Error>> {
-    let mut all_signatures = Vec::new();
-    let mut current_slot = start_slot;
+//     while current_slot <= end_slot {
+//         // Fetch confirmed signatures for the given program ID and slot range
+//         match rpc_client.get_confirmed_signatures_for_address2(
+//             program_id,
+//             Some(current_slot),
+//             Some(end_slot), // Fetch signatures from current_slot to end_slot
+//             None, // Limit to 1000 signatures (default)
+//         ) {
+//             Ok(signatures) => {
+//                 all_signatures.extend(signatures);
 
-    while current_slot <= end_slot {
-        // Fetch confirmed signatures for the given program ID and slot range
-        let signatures = rpc_client.get_confirmed_signatures_for_address2(
-            program_id,
-            Some(current_slot),
-            None, // None for 'before', meaning we start from current_slot
-            None, // Limit to 1000 signatures (default)
-        )?;
+//                 // If fewer than the expected number of results, we have reached the end
+//                 if signatures.len() < 1000 {
+//                     break;
+//                 }
 
-        all_signatures.extend(signatures);
-        
-        // If fewer than the expected number of results, we have reached the end
-        if signatures.len() < 1000 {
-            break;
-        }
+//                 // Set the next slot to fetch
+//                 current_slot = signatures.last().unwrap().slot;
+//             }
+//             Err(e) => {
+//                 // Return the error if the RPC call fails
+//                 return Err(Box::new(e));
+//             }
+//         }
+//     }
 
-        // Set the next slot to fetch
-        current_slot = signatures.last().unwrap().slot;
-    }
-
-    Ok(all_signatures)
-}
+//     Ok(all_signatures)
+// }
 
 pub async fn execute(
     log_tx: mpsc::Sender<String>,
@@ -74,14 +74,14 @@ pub async fn execute(
     let solana_devnet_url = "https://solana-devnet.g.alchemy.com/v2/Vlen2KsFpIkGNdoGIQynPL828MV-MqeS".to_string();
     let rpc_client = RpcClient::new(solana_devnet_url);
 
-    let mut start_slot = 359663424;
+    //let mut start_slot = 359663424;
     //dbg!("solana_url", cluster.url());
 
-    //let sig_str = "3PevY8NmPRzPpgjeNnwrcA3ehS3fMLcj6aEcE1Zw8hwYM7sypPmnGVgU9JNcUqnAwrPuoVVCVw5TgCB8K2xdomyS".to_string();
-    //let mut last_signature: Option<Signature> = Some(Signature::from_str(sig_str.as_str()).unwrap());
+    let sig_str = "2BDahqBc5GR48gfNGiYGDq68wEsEtyLhtg7j2GvcBN1tJGnqeerDmXcZjSpMKqTZmhSYVBiP1ZGVBnMkaE2ten6z".to_string();
+    let mut last_signature: Option<Signature> = Some(Signature::from_str(sig_str.as_str()).unwrap());
 
     loop {
-        let mut end_slot = get_newest_slot(&rpc_client).await.unwrap();
+        //let mut end_slot = get_newest_slot(&rpc_client).await.unwrap();
 
         tokio::select! {
             // Check if we received a stop signal
@@ -94,14 +94,34 @@ pub async fn execute(
             _ = async {
                 println!("🔍 Fetching latest transactions...");
 
-                let tx_signatures = get_signatures_for_program(
-                    &rpc_client,
-                    &program_id,
-                    start_slot,
-                    end_slot
-                ).await;
+                // let tx_signatures = match get_signatures_for_program(
+                //     &rpc_client,
+                //     &program_id,
+                //     start_slot,
+                //     end_slot
+                // ).await {
+                //     Ok(signatures) => signatures,
+                //     Err(e) => {
+                //         println!("Error fetching signatures: {}", e);
+                //         sleep(Duration::from_secs(5)).await; // Retry after a short delay
+                //         return; // Skip this iteration and continue
+                //     }
+                // };
 
-                start_slot = end_slot;
+                // Fetch the signatures from the program ID
+                let tx_signatures = rpc_client
+                    .get_signatures_for_address_with_config(
+                        &program_id,
+                        GetConfirmedSignaturesForAddress2Config {
+                            before: last_signature.clone(), // Get newer signatures
+                            until: None,
+                            limit: Some(2), // Adjust the limit based on your needs
+                            commitment: Some(CommitmentConfig::confirmed()),
+                        },
+                    )
+                    .expect("Failed to fetch transaction signatures");
+
+                //start_slot = end_slot;
 
                 if tx_signatures.is_empty() {
                     println!("⚠️ No new transactions.");
@@ -109,9 +129,8 @@ pub async fn execute(
                     return;
                 }
 
-                //dbg!("tx_signatures", &tx_signatures);
-
-                //last_signature = tx_signatures.first().map(|tx| Signature::from_str(&tx.signature).unwrap());
+                dbg!("tx_signatures", &tx_signatures);
+                last_signature = tx_signatures.first().map(|tx| Signature::from_str(&tx.signature).unwrap());
 
                 for tx_info in tx_signatures {
                     let signature = Signature::from_str(&tx_info.signature).unwrap();
@@ -130,32 +149,11 @@ pub async fn execute(
                         )
                         .expect("Failed to fetch transaction");
 
-                    // if let EncodedTransaction::Json(tx) = &tx_details.transaction.transaction {
-                    //     //if let Some(message) = extract_parsed_message(tx.message.clone()) {
-                    //     dbg!("tx_details ", &tx_details);
-                    //     dbg!("tx.message ", &tx.message);
-                    //     if let UiMessage::Parsed(message) = &tx.message {
-                    //             for instruction in message.instructions.iter() {
-                    //                 if let UiInstruction::Parsed(parsed_uinstr) = instruction {
-                    //                     if let UiParsedInstruction::Parsed(parsed_instr) = parsed_uinstr {
-                    //                         if parsed_instr.program_id == program_id.to_string() {
-                    //                             if let Some(parsed) = parsed_instr.parsed.as_object() {
-                    //                                 if parsed.get("type").map(|v| v.as_str()) == Some(Some(&instr)) {
-                    //                                     println!("✅ Found CREATE instruction in TX: {}", signature);
-                    //                                     let _ = log_tx.try_send(format!("{:?}", parsed_instr));
-                    //                                 }
-                    //                             }
-                    //                         }
-                    //                     }
-                    //                 }
-                    //             }
-                    //         //}
-                    //     }
-                    // }
+                    //dbg!("tx_details", &tx_details);
 
                     if let Some(meta) = &tx_details.transaction.meta {
                         if let OptionSerializer::Some(log_messages) = &meta.log_messages {
-                            dbg!("log_messages", &log_messages);
+                            dbg!("instrs", utils::get_instrs(log_messages));
                         }
 
                     }
