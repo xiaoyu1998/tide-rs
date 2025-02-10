@@ -3,6 +3,8 @@ mod create_buy;
 mod monitor_create_buy;
 mod utils;
 mod monitor;
+mod pumpfun_api;
+mod tx_parser;
 
 use tokio::net::{TcpListener, TcpStream};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};

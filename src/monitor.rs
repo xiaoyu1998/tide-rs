@@ -19,7 +19,7 @@ use anchor_client::Cluster;
 use std::str::FromStr;
 use std::error::Error;
 
-use crate::utils;
+use crate::tx_parser;
 
 async fn get_newest_slot(rpc_client: &RpcClient) -> Result<u64, Box<dyn Error>> {
     // Fetch the latest slot
@@ -41,8 +41,9 @@ async fn get_signatures_by_program_id(
         // Fetch signatures for program_id using `get_signatures_for_address_with_config`
         let config = GetConfirmedSignaturesForAddress2Config {
             before,
+            until: None,
             limit: Some(100), // Adjust the batch size as needed
-            ..GetConfirmedSignaturesForAddress2Config::default()
+            commitment: Some(CommitmentConfig::confirmed()),
         };
         
         let signatures = client
@@ -51,7 +52,7 @@ async fn get_signatures_by_program_id(
         // Filter signatures within the slot range
         let filtered_signatures: Vec<RpcConfirmedTransactionStatusWithSignature> = signatures
             .iter()
-            .filter(|sig| sig.slot >= start_slot && sig.slot <= end_slot)
+            .filter(|sig| sig.slot >= start_slot && sig.slot <= end_slot && sig.err.is_none())
             .cloned() // Clone the signature to avoid borrowing issues
             .collect();
 
@@ -74,7 +75,7 @@ async fn get_signatures_by_program_id(
 
 
 pub async fn execute(
-    log_tx: mpsc::Sender<String>,
+    log_tx: mpsc::Sender<Vec<tx_parser::Instruction>>,
     cluster: Cluster,
     program_id: Pubkey,
     instr: String,
@@ -83,9 +84,8 @@ pub async fn execute(
     let solana_devnet_url = "https://solana-devnet.g.alchemy.com/v2/Vlen2KsFpIkGNdoGIQynPL828MV-MqeS".to_string();
     let rpc_client = RpcClient::new(solana_devnet_url);
 
-    let mut start_slot = 359886588;
+    let mut start_slot = 360083993;
     //dbg!("solana_url", cluster.url());
-
     // let sig_str = "xYEGeaXDtSZJnhq1uNdu6CsztdYRL44Aaeq6XcYZPU9jPALH8iTLxjNvUq4V7mkdPij4UbgNBuLTj3Rp3o8GL4e".to_string();
     // let mut last_signature: Option<Signature> = Some(Signature::from_str(sig_str.as_str()).unwrap());
     //let mut last_signature: Option<Signature> ;
@@ -147,11 +147,16 @@ pub async fn execute(
                         .expect("Failed to fetch transaction");
 
                     //dbg!("tx_details", &tx_details);
-                    let accounts = utils::get_accounts(&tx_details.transaction);
+                    let accounts = tx_parser::get_accounts(&tx_details.transaction);
 
                     if let Some(meta) = &tx_details.transaction.meta {
                         if let OptionSerializer::Some(log_messages) = &meta.log_messages {
-                            dbg!("instrs", utils::get_instrs(log_messages, &accounts));
+                            //dbg!("instrs", tx_parser::get_instrs(log_messages, &accounts));
+                            let instrs= tx_parser::get_instrs(log_messages, &accounts);
+                            if instrs.len() > 0 {
+                                let _ = log_tx.try_send(instrs);
+                                //let _ = log_tx.try_send(format!("{:?}", instrs));
+                            }  
                         }
 
                     }

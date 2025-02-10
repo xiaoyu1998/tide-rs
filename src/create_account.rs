@@ -42,7 +42,7 @@ fn process_task(worker_id: u64, number: u64) -> String {
     // Simulate task processing
     //println!("Worker {} is processing task: {}", worker_id, number);
     let mut accounts:Vec<String> = vec![];
-    for i in 0..number{
+    for _i in 0..number{
         let account: Keypair = Keypair::new();
         //accounts.push(account);
         //let public_key_str = account.pubkey().to_string();

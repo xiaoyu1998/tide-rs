@@ -21,15 +21,13 @@ use pumpfun::{
 use rand::random;
 
 use crate::monitor;
-
-fn buy() {
-    println!("Performing action...");
-}
+use crate::tx_parser;
+use crate::pumpfun_api;
 
 pub async fn execute(sol_amount: u64) {
 
     // Create an async channel for logs
-    let (instr_tx, instr_rx) = mpsc::channel::<String>(100);
+    let (instr_tx, instr_rx) = mpsc::channel::<Vec<tx_parser::Instruction>>(100);
     //let (stop_tx, stop_rx) = oneshot::channel::<()>();
     let (stop_tx, stop_rx) = broadcast::channel::<()>(1);
 
@@ -48,7 +46,7 @@ pub async fn execute(sol_amount: u64) {
 
     // Spawn a separate task to process instrs
     let instr_handle = tokio::spawn(async move {
-        process_instr(instr_rx, instr_stop_rx).await;
+        process_instr(sol_amount, instr_rx, instr_stop_rx).await;
     });
 
     // // Wait for Ctrl+C signal
@@ -62,28 +60,31 @@ pub async fn execute(sol_amount: u64) {
 }
 
 // Function to process instr in a separate thread
-async fn process_instr(mut instr_rx: mpsc::Receiver<String>, mut stop_rx: broadcast::Receiver<()>) {
-    // let payer: Keypair = Keypair::new();
-    // let public_key = payer.pubkey();
-    // println!("Loaded Solana Address: {}", public_key);
-
-    // let rpc = RpcClient::new(Cluster::Devnet.url());
-    // dbg!(rpc.get_balance(&public_key).unwrap());
-
-    // let client: PumpFun<'_> = PumpFun::new(Cluster::Devnet, &payer, None, None);
-    // dbg!(Cluster::Devnet.url());
-
-    // // Request airdrop of 2 SOL
-    // let amount = 2_000_000_000; // 2 SOL (in lamports)
-    // match client.client.request_airdrop(&public_key, amount) {
-    //     Ok(sig) => println!("Airdrop requested. Transaction Signature: {}", sig),
-    //     Err(err) => eprintln!("Airdrop failed: {:?}", err),
-    // }
+async fn process_instr(sol_amount: u64, mut instr_rx: mpsc::Receiver<Vec<tx_parser::Instruction>>, mut stop_rx: broadcast::Receiver<()>) {
     tokio::select! {
         // Process instrs
-        Some(instr) = instr_rx.recv() => {
-            println!("Received Log: {}", instr);
+        Some(instrs) = instr_rx.recv() => {
+            dbg!("instrs", &instrs);
+            //println!("Received Log: {}", instr);
             //buy
+            for instr in &instrs {
+                if instr.action == "create_buy".to_string() {
+                    // Call the buy function and handle errors
+                    // match pumpfun_api::buy(
+                    //     instr.params.clone(),
+                    //     sol_amount
+                    // ).await {
+                    //     Ok(_) => {
+                    //         println!("Buy successful for action: {}", instr.action);
+                    //     }
+                    //     Err(e) => {
+                    //         // Print the error if the buy fails
+                    //         println!("Error occurred during buy: {}", e);
+                    //     }
+                    // }
+                }
+
+            }
         }
 
         // Stop the thread when receiving stop signal
