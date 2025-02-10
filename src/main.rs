@@ -47,7 +47,7 @@ enum Commands {
         #[arg(short, long)]
         twitter: Option<String>,  
 
-        #[arg(short, long)]
+        #[arg(short = 'g', long)]
         telegram: Option<String>,  
 
         #[arg(short, long)]
@@ -96,6 +96,7 @@ async fn main() -> tokio::io::Result<()> {
             website,
             amount_sol
         } => {
+
             let _ = create_buy::execute(
                 name.clone(),
                 symbol.clone(),
@@ -105,7 +106,7 @@ async fn main() -> tokio::io::Result<()> {
                 telegram.clone(),
                 website.clone(),
                 *amount_sol
-            );
+            ).await;;
         }
         Commands::MonitorCreateBuy { amount_sol } => {
             let _ = monitor_create_buy::execute(*amount_sol).await;

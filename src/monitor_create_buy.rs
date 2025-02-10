@@ -46,7 +46,7 @@ pub async fn execute(sol_amount: u64) {
 
     // Spawn a separate task to process instrs
     let instr_handle = tokio::spawn(async move {
-        process_instr(sol_amount, instr_rx, instr_stop_rx).await;
+        process(sol_amount, instr_rx, instr_stop_rx).await;
     });
 
     // // Wait for Ctrl+C signal
@@ -59,8 +59,8 @@ pub async fn execute(sol_amount: u64) {
 
 }
 
-// Function to process instr in a separate thread
-async fn process_instr(sol_amount: u64, mut instr_rx: mpsc::Receiver<Vec<tx_parser::Instruction>>, mut stop_rx: broadcast::Receiver<()>) {
+// Function to process in a separate thread
+async fn process(sol_amount: u64, mut instr_rx: mpsc::Receiver<Vec<tx_parser::Instruction>>, mut stop_rx: broadcast::Receiver<()>) {
     tokio::select! {
         // Process instrs
         Some(instrs) = instr_rx.recv() => {
