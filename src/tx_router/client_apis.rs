@@ -36,7 +36,7 @@ pub async fn create_and_buy(
 ) -> Result<(), String> {
 
     // Define the URL of the API endpoint
-    let url = "http://127.0.0.1:3030/create_and_buy";
+    let url = "http://192.168.2.101:3030/create_and_buy";
 
     // Create the client and send the request
     let client = Client::new();
@@ -52,6 +52,8 @@ pub async fn create_and_buy(
         website,
         amount_sol
     };
+
+    println!("create_and_buy: {:?}", create_and_buy_request);
 
     // Send the POST request
     let response = client
@@ -84,7 +86,7 @@ pub async fn buy(
 ) -> Result<(), String> {
 
     // Define the URL of the API endpoint
-    let url = "http://127.0.0.1:3030/buy";
+    let url = "http://192.168.2.101:3030/buy";
 
     // Create the client and send the request
     let client = Client::new();
@@ -125,7 +127,7 @@ pub async fn sell(
 ) -> Result<(), String> {
 
     // Define the URL of the API endpoint
-    let url = "http://127.0.0.1:3030/sell";
+    let url = "http://192.168.2.101:3030/sell";
 
     // Create the client and send the request
     let client = Client::new();

@@ -2,7 +2,7 @@ use serde::Deserialize;
 use serde::Serialize;
 
 // Define structs for request and response
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct CreateAndBuyRequest {
     pub name: String,
     pub symbol: String,
@@ -14,19 +14,19 @@ pub struct CreateAndBuyRequest {
     pub amount_sol: u64
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct BuyRequest {
     pub mint_str: String,
     pub amount_sol: u64,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct SellRequest {
     pub mint_str: String,
     pub amount_sol: u64,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Response {
     pub success: bool,
     pub message: String,

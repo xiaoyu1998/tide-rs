@@ -6,6 +6,7 @@ mod monitor;
 // mod pumpfun_api;
 mod tx_parser;
 mod tx_router;
+mod pumpfun;
 
 use tokio::net::{TcpListener, TcpStream};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};

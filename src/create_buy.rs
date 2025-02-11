@@ -5,7 +5,7 @@ use std::thread;
 
 use crate::utils;
 
-use crate::tx_router::pumpfun_apis::create_and_buy;
+use crate::tx_router::client_apis::create_and_buy;
 
 pub async fn execute(
     name: String,
@@ -31,6 +31,8 @@ pub async fn execute(
         Ok(_) => Ok(()), // If successful, return Ok
         Err(e) => {
             // Handle error (print/log it, or return a custom error message)
+            println!("create_and_buy: {:?}", format!("Failed to create and buy: {}", e));
+
             Err(format!("Failed to create and buy: {}", e))
         }
    }

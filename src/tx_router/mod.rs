@@ -1,6 +1,7 @@
 pub mod handlers;
-pub mod pumpfun_apis;
+pub mod client_apis;
+pub mod service_apis;
 pub mod types;
 
 // pub use handlers;
-// pub use pumpfun_apis;
+// pub use client_apis;
