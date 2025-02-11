@@ -22,7 +22,7 @@ use rand::random;
 
 use crate::monitor;
 use crate::tx_parser;
-use crate::pumpfun_api;
+use crate::tx_router::pumpfun_apis::buy;
 
 pub async fn execute(sol_amount: u64) {
 
@@ -70,18 +70,18 @@ async fn process(sol_amount: u64, mut instr_rx: mpsc::Receiver<Vec<tx_parser::In
             for instr in &instrs {
                 if instr.action == "create_buy".to_string() {
                     // Call the buy function and handle errors
-                    // match pumpfun_api::buy(
-                    //     instr.params.clone(),
-                    //     sol_amount
-                    // ).await {
-                    //     Ok(_) => {
-                    //         println!("Buy successful for action: {}", instr.action);
-                    //     }
-                    //     Err(e) => {
-                    //         // Print the error if the buy fails
-                    //         println!("Error occurred during buy: {}", e);
-                    //     }
-                    // }
+                    match buy(
+                        instr.params.clone(),
+                        sol_amount
+                    ).await {
+                        Ok(_) => {
+                            println!("Buy successful for action: {}", instr.action);
+                        }
+                        Err(e) => {
+                            // Print the error if the buy fails
+                            println!("Error occurred during buy: {}", e);
+                        }
+                    }
                 }
 
             }

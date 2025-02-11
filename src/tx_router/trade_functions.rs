@@ -49,31 +49,23 @@ pub async fn create_and_buy(
     website: Option<String>,
     amount_sol: u64
 ) -> Result<(), String> {
-
-    let path = "~/.config/solana/id.json";
-    let payer = utils::load_keypair_from_file(path).expect("Failed to load keypair");
+    let payer: Keypair = Keypair::new();
     let public_key = payer.pubkey();
-    // let payer: Keypair = Keypair::new();
-    // let public_key = payer.pubkey();
     println!("Loaded Solana Address: {}", public_key);
-    // let rpc = RpcClient::new(Cluster::Devnet.url());
+    let rpc = RpcClient::new(Cluster::Devnet.url());
 
-    let solana_devnet_url = "https://solana-devnet.g.alchemy.com/v2/Vlen2KsFpIkGNdoGIQynPL828MV-MqeS".to_string();
-    let rpc = RpcClient::new(solana_devnet_url);
-
-    // let amount = 2_000_000_000; // 2 SOL (in lamports)
-    // match rpc.request_airdrop(&public_key, amount) {
-    //     Ok(sig) => println!("Airdrop requested. Transaction Signature: {}", sig),
-    //     Err(err) => eprintln!("Airdrop failed: {:?}", err),
-    // }
-
-    dbg!(rpc.get_balance(&public_key).unwrap());
+    let amount = 2_000_000_000; // 2 SOL (in lamports)
+    match rpc.request_airdrop(&public_key, amount) {
+        Ok(sig) => println!("Airdrop requested. Transaction Signature: {}", sig),
+        Err(err) => eprintln!("Airdrop failed: {:?}", err),
+    }
 
     let client: PumpFun<'_> = PumpFun::new(Cluster::Devnet, &payer, None, None);
     //dbg!(Cluster::Devnet.url());
 
     // Mint keypair
     let mint: Keypair = Keypair::new();
+    dbg!(mint);
 
     // Token metadata
     let metadata: CreateTokenMetadata = CreateTokenMetadata {
@@ -108,26 +100,13 @@ pub async fn buy(
     amount_sol: u64
 ) -> Result<(), String> {
 
-    // let path = "~/.config/solana/id.json";
-    // let payer = utils::load_keypair_from_file(path).expect("Failed to load keypair");
-    // let public_key = payer.pubkey();
-    // println!("Loaded Solana Address: {}", public_key);
-
-    let payer: Keypair = Keypair::new();
+    let path = "~/.config/solana/id.json";
+    let payer = utils::load_keypair_from_file(path).expect("Failed to load keypair");
     let public_key = payer.pubkey();
     println!("Loaded Solana Address: {}", public_key);
-    let rpc = RpcClient::new(Cluster::Devnet.url());
-
-    let amount = 2_000_000_000; // 2 SOL (in lamports)
-    match rpc.request_airdrop(&public_key, amount) {
-        Ok(sig) => println!("Airdrop requested. Transaction Signature: {}", sig),
-        Err(err) => eprintln!("Airdrop failed: {:?}", err),
-    }
-
     dbg!(rpc.get_balance(&public_key).unwrap());
 
     let client: PumpFun<'_> = PumpFun::new(Cluster::Devnet, &payer, None, None);
-    dbg!(Cluster::Devnet.url());
 
     // Mint keypair
     let mint: Pubkey = match hex_to_pubkey(&mint_str) {
@@ -150,6 +129,41 @@ pub async fn buy(
     // // Buy tokens (ATA will be created automatically if needed)
     let signature: Signature = client.buy(&mint, amount_lamports, None, fee).await.unwrap();
     println!("Bought tokens: {}", signature);
+
+    Ok(()) 
+
+}
+
+pub async fn sell(
+    mint_str: String,
+    amount_sol: u64
+) -> Result<(), String> {
+
+    let path = "~/.config/solana/id.json";
+    let payer = utils::load_keypair_from_file(path).expect("Failed to load keypair");
+    let public_key = payer.pubkey();
+    println!("Loaded Solana Address: {}", public_key);
+    dbg!(rpc.get_balance(&public_key).unwrap());
+
+    let client: PumpFun<'_> = PumpFun::new(Cluster::Devnet, &payer, None, None);
+
+    // Mint keypair
+    let mint: Pubkey = match hex_to_pubkey(&mint_str) {
+        Ok(pubkey) => pubkey,  // Create Pubkey from byte vector
+        Err(err) => {
+            //println!("Failed to decode pubkey string: {}", err);
+            return Err(format!("Failed to decode pubkey string: {}", err));  // Return on error
+        }
+    };
+
+    let fee: Option<PriorityFee> = Some(PriorityFee {
+        limit: Some(200_000),
+        price: Some(100_000_000),
+    });  
+
+    // Sell tokens (sell all tokens)
+    let signature: Signature = client.sell(&mint.pubkey(), None, None, fee).await.unwrap();
+    println!("Sold tokens: {}", signature);
 
     Ok(()) 
 

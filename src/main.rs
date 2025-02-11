@@ -3,14 +3,17 @@ mod create_buy;
 mod monitor_create_buy;
 mod utils;
 mod monitor;
-mod pumpfun_api;
+// mod pumpfun_api;
 mod tx_parser;
+mod tx_router;
 
 use tokio::net::{TcpListener, TcpStream};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use std::env;
 
 use clap::{Parser, Subcommand};
+
+use tx_router::handlers;
 
 /// My Project with Subcommands
 #[derive(Parser)]
@@ -29,6 +32,8 @@ enum Commands {
         #[arg(short, long)]
         numbers: u64,
     },
+    /// Start Tx Rounter
+    StartTxRouter,
 
     /// Create Token and pumpfun pairs
     CreateBuy{
@@ -96,7 +101,6 @@ async fn main() -> tokio::io::Result<()> {
             website,
             amount_sol
         } => {
-
             let _ = create_buy::execute(
                 name.clone(),
                 symbol.clone(),
@@ -113,6 +117,9 @@ async fn main() -> tokio::io::Result<()> {
         }
         Commands::Start => {
             //let _ = start_server().await;
+        }
+        Commands::StartTxRouter => {
+            let _ = tx_router::handlers::start().await;
         }
     }
 
