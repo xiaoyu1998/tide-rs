@@ -1,8 +1,8 @@
 // use anchor_client::{
-solana_client::rpc_client::{RpcClient,GetConfirmedSignaturesForAddress2Config},
-solana_client::rpc_response::RpcConfirmedTransactionStatusWithSignature,
-solana_client::rpc_config::RpcTransactionConfig,
-solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey, signature::Signature},
+use solana_client::rpc_client::{RpcClient,GetConfirmedSignaturesForAddress2Config};
+use solana_client::rpc_response::RpcConfirmedTransactionStatusWithSignature;
+use solana_client::rpc_config::RpcTransactionConfig;
+use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey, signature::Signature};
 // };
 use solana_transaction_status::{
     option_serializer::OptionSerializer,
@@ -15,10 +15,8 @@ use solana_transaction_status::{
 };
 use tokio::sync::{mpsc, broadcast};
 use tokio::time::{sleep, Duration};
-use anchor_client::Cluster;
 use std::str::FromStr;
 use std::error::Error;
-
 use crate::tx_parser;
 
 async fn get_newest_slot(rpc_client: &RpcClient) -> Result<u64, Box<dyn Error>> {
@@ -76,7 +74,6 @@ async fn get_signatures_by_program_id(
 
 pub async fn execute(
     log_tx: mpsc::Sender<Vec<tx_parser::Instruction>>,
-    cluster: Cluster,
     program_id: Pubkey,
     instr: String,
     mut stop_rx: broadcast::Receiver<()>,  // ✅ Added stop signal receiver

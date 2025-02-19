@@ -2785,8 +2785,11 @@ name = "mm-tide-rs"
 version = "0.1.0"
 dependencies = [
  "anchor-client",
+ "anchor-spl",
+ "borsh 1.5.5",
  "clap 4.5.27",
  "hex",
+ "isahc",
  "pumpfun",
  "pumpfun-cpi",
  "rand 0.9.0",
@@ -2794,6 +2797,9 @@ dependencies = [
  "serde",
  "serde_json",
  "shellexpand",
+ "solana-client",
+ "solana-program",
+ "solana-sdk",
  "solana-transaction-status",
  "tokio",
  "warp",

@@ -38,7 +38,7 @@ pub async fn execute(sol_amount: u64) {
     // Spawn monitor thread
     let monitor_handle = tokio::spawn(monitor::execute(
         instr_tx.clone(),
-        Cluster::Devnet,
+        // Cluster::Devnet,
         cpi::ID,
         "Create".to_string(),
         monitor_stop_rx,
