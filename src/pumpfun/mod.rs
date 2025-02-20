@@ -5,6 +5,7 @@ pub mod instruction;
 pub mod utils;
 
 use borsh::BorshDeserialize;
+use std::str::FromStr;
 //use solana_sdk::compute_budget::ComputeBudgetInstruction;
 use solana_client::rpc_client::RpcClient;
 
@@ -22,32 +23,24 @@ use solana_program::{
     hash::Hash,
 };
 
-use anchor_spl::associated_token::{
+// use anchor_spl::associated_token::{
+//     get_associated_token_address,
+//     spl_associated_token_account::instruction::create_associated_token_account,
+// };
+
+use spl_associated_token_account::{
     get_associated_token_address,
-    spl_associated_token_account::instruction::create_associated_token_account,
+    instruction::create_associated_token_account,
 };
-// //declare_id!("6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P");
-// fn hex_to_pubkey(mint_str: &String) -> Result<Pubkey, String> {
-//     // Convert the string to a 32-byte array
-//     let mint_bytes = match hex::decode(mint_str.to_string()) {
-//         Ok(bytes) if bytes.len() == 32 => bytes,
-//         Ok(_) => return Err("Invalid pubkey length".to_string()),
-//         Err(err) => return Err(format!("Failed to decode pubkey string: {}", err)),
-//     };
 
-//     // Create Pubkey from the 32-byte array
-//     let pubkey = Pubkey::new_from_array(mint_bytes.try_into().unwrap());
-//     Ok(pubkey)
-// }
-//const PROGRAM_ID: Pubkey = hex_to_pubkey(&"6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P".to_string()).expect("Invalid program ID string");
+use pumpfun_cpi as cpi;
 //pub const PROGRAM_ID: Pubkey = Pubkey::from_str("6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P").unwrap();
-
-pub const PROGRAM_ID: Pubkey = Pubkey::new_from_array([
-    0x6E, 0xF8, 0x72, 0x65, 0x74, 0x63, 0x68, 0x52,
-    0x5D, 0x6B, 0x7A, 0x6F, 0x6E, 0x8E, 0xB8, 0x87,
-    0x72, 0xB4, 0x12, 0x93, 0x80, 0x61, 0xE7, 0xF9,
-    0x1D, 0x27, 0x14, 0x65, 0xB5, 0xD3, 0xD1, 0x73,
-]);
+// pub const PROGRAM_ID: Pubkey = Pubkey::new_from_array([
+//     0x6E, 0xF8, 0x72, 0x65, 0x74, 0x63, 0x68, 0x52,
+//     0x5D, 0x6B, 0x7A, 0x6F, 0x6E, 0x8E, 0xB8, 0x87,
+//     0x72, 0xB4, 0x12, 0x93, 0x80, 0x61, 0xE7, 0xF9,
+//     0x1D, 0x27, 0x14, 0x65, 0xB5, 0xD3, 0xD1, 0x73,
+// ]);
 
 /// Configuration for priority fee compute unit parameters
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -64,8 +57,6 @@ pub struct PumpFun<'a> {
     pub rpc: RpcClient,
     /// Keypair used to sign transactions
     pub payer: &'a Keypair,
-
-    //pub program_id: Pubkey,
 }
 
 async fn fetch_recent_blockhash(rpc: &RpcClient) -> Result<Hash, solana_client::client_error::ClientError> {
@@ -184,8 +175,13 @@ impl<'a> PumpFun<'a> {
         priority_fee: Option<PriorityFee>,
     ) -> Result<Signature, error::ClientError> {
 
+        // println!("create_and_buy mint: {}", &mint.pubkey());
+        // println!("create_and_buy payer: {}", &self.payer.pubkey());
+
         // Get accounts and calculate buy amounts
         let global_account = self.get_global_account()?;
+        //println!("create_and_buy fee_recipient: {:?}", &global_account);
+
         let buy_amount = global_account.get_initial_buy_price(amount_sol);
         let buy_amount_with_slippage =
             utils::calculate_with_slippage_buy(amount_sol, slippage_basis_points.unwrap_or(500));
@@ -195,6 +191,8 @@ impl<'a> PumpFun<'a> {
             Ok(blockhash) => blockhash,
             Err(e) => return  Err(error::ClientError::SolanaClientError(e)),
         };
+
+        //println!("create_and_buy recent_blockhash: {}", &recent_blockhash);
 
         // Build the transaction instructions
         let mut instructions: Vec<Instruction> = Vec::new();
@@ -210,14 +208,17 @@ impl<'a> PumpFun<'a> {
                 let price_ix = ComputeBudgetInstruction::set_compute_unit_price(price);
                 instructions.push(price_ix);
             }
-        }
+        } 
 
-        // Create the instruction for token creation
-        let create_token_ix = instruction::create(self.payer, mint, instruction::CreateInstructionArgs {
-            name: metadata.name,
-            symbol: metadata.symbol,
-            uri: metadata.file,
-        });  
+        let create_token_ix = instruction::create(
+            self.payer,
+            mint,
+            cpi::instruction::Create {
+                _name: metadata.name,
+                _symbol: metadata.symbol,
+                _uri: metadata.file,
+            },
+        );
         
         instructions.push(create_token_ix); 
 
@@ -233,13 +234,20 @@ impl<'a> PumpFun<'a> {
             instructions.push(ata_ix);
         }
 
-        // Add the buy instruction to the instructions vector
-        let buy_args = instruction::BuyInstructionArgs {
-            amount: buy_amount,
-            max_sol_cost: buy_amount_with_slippage,
-        };
-        let buy_ix = instruction::buy(self.payer, &mint.pubkey(), &global_account.fee_recipient, buy_args);
+        let buy_ix = instruction::buy(
+            self.payer, 
+            &mint.pubkey(), 
+            &global_account.fee_recipient,
+            cpi::instruction::Buy {
+                _amount: buy_amount,
+                _max_sol_cost: buy_amount_with_slippage,
+            },
+        );
+
+
         instructions.push(buy_ix);
+
+        //println!("create_and_buy instructions: {:?}", &instructions);
 
         // Build the transaction
         let mut transaction = Transaction::new_with_payer(&instructions, Some(&self.payer.pubkey()));
@@ -318,18 +326,17 @@ impl<'a> PumpFun<'a> {
             instructions.push(ata_ix);
         }
 
-        // Add the buy instruction
-        let buy_args = instruction::BuyInstructionArgs {
-            amount: buy_amount,
-            max_sol_cost: buy_amount_with_slippage,
-        };
-
         let buy_ix = instruction::buy(
             &self.payer,
             mint,
             &global_account.fee_recipient,
-            buy_args,
+            cpi::instruction::Buy {
+                _amount: buy_amount,
+                _max_sol_cost: buy_amount_with_slippage,
+            },
         );
+
+
         instructions.push(buy_ix);
 
         // Build the transaction
@@ -359,99 +366,98 @@ impl<'a> PumpFun<'a> {
     /// # Returns
     ///
     /// Returns the transaction signature if successful, or a ClientError if the operation fails
-    // pub async fn sell(
-    //     &self,
-    //     mint: &Pubkey,
-    //     amount_token: Option<u64>,
-    //     slippage_basis_points: Option<u64>,
-    //     priority_fee: Option<PriorityFee>,
-    // ) -> Result<Signature, error::ClientError> {
-    //     // Get the associated token address
-    //     let ata: Pubkey = get_associated_token_address(&self.payer.pubkey(), mint);
+    pub async fn sell(
+        &self,
+        mint: &Pubkey,
+        amount_token: Option<u64>,
+        slippage_basis_points: Option<u64>,
+        priority_fee: Option<PriorityFee>,
+    ) -> Result<Signature, error::ClientError> {
+        // Get the associated token address
+        let ata: Pubkey = get_associated_token_address(&self.payer.pubkey(), mint);
 
-    //     // Fetch balance
-    //     let balance = self.rpc.get_token_account_balance(&ata).unwrap();
-    //     let balance_u64: u64 = balance.amount.parse::<u64>().unwrap();
+        // Fetch balance
+        let balance = self.rpc.get_token_account_balance(&ata).unwrap();
+        let balance_u64: u64 = balance.amount.parse::<u64>().unwrap();
 
-    //     // Use the provided amount or the full balance
-    //     let _amount = amount_token.unwrap_or(balance_u64);
+        // Use the provided amount or the full balance
+        let _amount = amount_token.unwrap_or(balance_u64);
 
-    //     // Get global account and bonding curve account
-    //     let global_account = self.get_global_account()?;
-    //     let bonding_curve_account = self.get_bonding_curve_account(mint)?;
+        // Get global account and bonding curve account
+        let global_account = self.get_global_account()?;
+        let bonding_curve_account = self.get_bonding_curve_account(mint)?;
 
-    //     // Calculate minimum SOL output
-    //     let min_sol_output = bonding_curve_account
-    //         .get_sell_price(_amount, global_account.fee_basis_points)
-    //         .map_err(error::ClientError::BondingCurveError)?;
+        // Calculate minimum SOL output
+        let min_sol_output = bonding_curve_account
+            .get_sell_price(_amount, global_account.fee_basis_points)
+            .map_err(error::ClientError::BondingCurveError)?;
 
-    //     // Calculate min SOL output with slippage
-    //     let _min_sol_output = utils::calculate_with_slippage_sell(
-    //         min_sol_output,
-    //         slippage_basis_points.unwrap_or(500),
-    //     );
+        // Calculate min SOL output with slippage
+        let _min_sol_output = utils::calculate_with_slippage_sell(
+            min_sol_output,
+            slippage_basis_points.unwrap_or(500),
+        );
 
-    //     // Set up RPC Client
-    //     let self.rpc = SolanaRpcClient::new(self.rpc_url.clone());
+        // Get the recent blockhash
+        let recent_blockhash = match fetch_recent_blockhash(&self.rpc).await {
+            Ok(blockhash) => blockhash,
+            Err(e) => return  Err(error::ClientError::SolanaClientError(e)),
+        };
 
-    //     // Get the recent blockhash
-    //     let recent_blockhash = self.fetch_recent_blockhash(&self.rpc).await?;
+        // Instructions vector to collect all instructions
+        let mut instructions: Vec<Instruction> = Vec::new();
 
-    //     // Instructions vector to collect all instructions
-    //     let mut instructions: Vec<Instruction> = Vec::new();
+        // Add priority fee if provided
+        if let Some(fee) = priority_fee {
+            if let Some(limit) = fee.limit {
+                let limit_ix = ComputeBudgetInstruction::set_compute_unit_limit(limit);
+                instructions.push(limit_ix);
+            }
 
-    //     // Add priority fee if provided
-    //     if let Some(fee) = priority_fee {
-    //         if let Some(limit) = fee.limit {
-    //             let limit_ix = ComputeBudgetInstruction::set_compute_unit_limit(limit);
-    //             instructions.push(limit_ix);
-    //         }
+            if let Some(price) = fee.price {
+                let price_ix = ComputeBudgetInstruction::set_compute_unit_price(price);
+                instructions.push(price_ix);
+            }
+        }
 
-    //         if let Some(price) = fee.price {
-    //             let price_ix = ComputeBudgetInstruction::set_compute_unit_price(price);
-    //             instructions.push(price_ix);
-    //         }
-    //     }
+        // Create Associated Token Account if needed
+        if self.rpc.get_account(&ata).is_err() {
+            let ata_ix = create_associated_token_account(
+                &self.payer.pubkey(),
+                &self.payer.pubkey(),
+                mint,
+                &constants::accounts::TOKEN_PROGRAM,
+            );
+            instructions.push(ata_ix);
+        }
 
-    //     // Create Associated Token Account if needed
-    //     if self.rpc.get_account(&ata).is_err() {
-    //         let ata_ix = create_associated_token_account(
-    //             &self.payer.pubkey(),
-    //             &self.payer.pubkey(),
-    //             mint,
-    //             &constants::accounts::TOKEN_PROGRAM,
-    //         );
-    //         instructions.push(ata_ix);
-    //     }
+        // Add the sell instruction
+        let sell_ix = instruction::sell(
+            &self.payer,
+            mint,
+            &global_account.fee_recipient,
+            cpi::instruction::Sell {
+                _amount,
+                _min_sol_output,
+            },
+        );
 
-    //     // Add the sell instruction
-    //     let sell_args = instruction::SellInstructionArgs {
-    //         amount: _amount,
-    //         min_sol_output: _min_sol_output,
-    //     };
+        instructions.push(sell_ix);
 
-    //     let sell_ix = sell(
-    //         &self.payer,
-    //         mint,
-    //         &global_account.fee_recipient,
-    //         sell_args,
-    //     );
-    //     instructions.push(sell_ix);
+        // Build the transaction
+        let mut transaction = Transaction::new_with_payer(&instructions, Some(&self.payer.pubkey()));
 
-    //     // Build the transaction
-    //     let mut transaction = Transaction::new_with_payer(&instructions, Some(&self.payer.pubkey()));
+        // Sign the transaction
+        let signers: Vec<&dyn solana_sdk::signer::Signer> = vec![&self.payer];
+        transaction.sign(&signers, recent_blockhash);
 
-    //     // Sign the transaction
-    //     let signers: Vec<&dyn solana_sdk::signer::Signer> = vec![&self.payer];
-    //     transaction.sign(&signers, recent_blockhash);
+        // Send the transaction
+        let signature = self.rpc.send_and_confirm_transaction(&transaction).map_err(|e| {
+            error::ClientError::SolanaClientError(e)
+        })?;
 
-    //     // Send the transaction
-    //     let signature = self.rpc.send_and_confirm_transaction(&transaction).await.map_err(|e| {
-    //         error::ClientError::SolanaClientError(e.to_string())
-    //     })?;
-
-    //     Ok(signature)
-    // }
+        Ok(signature)
+    }
 
     /// Gets the Program Derived Address (PDA) for the global state account
     ///
@@ -459,6 +465,7 @@ impl<'a> PumpFun<'a> {
     ///
     /// Returns the PDA public key derived from the GLOBAL_SEED
     pub fn get_global_pda() -> Pubkey {
+        let PROGRAM_ID: Pubkey = Pubkey::from_str("6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P").unwrap();
         let seeds: &[&[u8]; 1] = &[constants::seeds::GLOBAL_SEED];
         let program_id: &Pubkey = &PROGRAM_ID;
         Pubkey::find_program_address(seeds, program_id).0
@@ -470,6 +477,7 @@ impl<'a> PumpFun<'a> {
     ///
     /// Returns the PDA public key derived from the MINT_AUTHORITY_SEED
     pub fn get_mint_authority_pda() -> Pubkey {
+        let PROGRAM_ID: Pubkey = Pubkey::from_str("6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P").unwrap();
         let seeds: &[&[u8]; 1] = &[constants::seeds::MINT_AUTHORITY_SEED];
         let program_id: &Pubkey = &PROGRAM_ID;
         Pubkey::find_program_address(seeds, program_id).0
@@ -485,6 +493,7 @@ impl<'a> PumpFun<'a> {
     ///
     /// Returns Some(PDA) if derivation succeeds, or None if it fails
     pub fn get_bonding_curve_pda(mint: &Pubkey) -> Option<Pubkey> {
+        let PROGRAM_ID: Pubkey = Pubkey::from_str("6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P").unwrap();
         let seeds: &[&[u8]; 2] = &[constants::seeds::BONDING_CURVE_SEED, mint.as_ref()];
         let program_id: &Pubkey = &PROGRAM_ID;
         let pda: Option<(Pubkey, u8)> = Pubkey::try_find_program_address(seeds, program_id);

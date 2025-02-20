@@ -23,3 +23,4 @@ warp = "0.3"
 serde = { version = "1.0", features = ["derive"] }
 isahc = "1.7.2"
 borsh = { version = "1.5.3", features = ["derive"] }
+spl-associated-token-account = "3.0.4"

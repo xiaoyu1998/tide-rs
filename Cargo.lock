@@ -2801,6 +2801,7 @@ dependencies = [
  "solana-program",
  "solana-sdk",
  "solana-transaction-status",
+ "spl-associated-token-account 3.0.4",
  "tokio",
  "warp",
 ]

@@ -10,7 +10,7 @@
 //! - `buy`: Instruction to buy tokens from a bonding curve by providing SOL.
 //! - `sell`: Instruction to sell tokens back to the bonding curve in exchange for SOL.
 
-use borsh::{BorshSerialize, BorshDeserialize};
+// use borsh::{BorshSerialize, BorshDeserialize};
 use crate::pumpfun::{constants, PumpFun};
 
 use solana_sdk::{
@@ -20,29 +20,32 @@ use solana_sdk::{
     signer::Signer,
 };
 
-#[derive(BorshSerialize, BorshDeserialize)]
-pub struct CreateInstructionArgs {
-    pub name: String,
-    pub symbol: String,
-    pub uri: String,
-}
+// #[derive(BorshSerialize, BorshDeserialize)]
+// pub struct CreateInstructionArgs {
+//     pub name: String,
+//     pub symbol: String,
+//     pub uri: String,
+// }
 
-#[derive(BorshSerialize, BorshDeserialize)]
-pub struct BuyInstructionArgs {
-    pub amount: u64,
-    pub max_sol_cost: u64,
-}
+// #[derive(BorshSerialize, BorshDeserialize)]
+// pub struct BuyInstructionArgs {
+//     pub amount: u64,
+//     pub max_sol_cost: u64,
+// }
 
-#[derive(BorshSerialize, BorshDeserialize)]
-pub struct SellInstructionArgs {
-    pub amount: u64,
-    pub min_sol_output: u64,
-}
+// #[derive(BorshSerialize, BorshDeserialize)]
+// pub struct SellInstructionArgs {
+//     pub amount: u64,
+//     pub min_sol_output: u64,
+// }
 
-use anchor_spl::associated_token::{
+use spl_associated_token_account::{
     get_associated_token_address,
-    spl_associated_token_account::instruction::create_associated_token_account,
+    instruction::create_associated_token_account,
 };
+
+use pumpfun_cpi as cpi;
+use anchor_client::anchor_lang::InstructionData;
 
 /// Creates an instruction to create a new token with bonding curve
 ///
@@ -57,15 +60,17 @@ use anchor_spl::associated_token::{
 /// # Returns
 ///
 /// Returns a Solana instruction that when executed will create the token and its accounts
-pub fn create(payer: &Keypair, mint: &Keypair, args: CreateInstructionArgs) -> Instruction {
+//pub fn create(payer: &Keypair, mint: &Keypair, args: CreateInstructionArgs) -> Instruction {
+pub fn create(payer: &Keypair, mint: &Keypair, args: cpi::instruction::Create) -> Instruction {
     let bonding_curve: Pubkey = PumpFun::get_bonding_curve_pda(&mint.pubkey()).unwrap();
-    // Serialize the args into bytes
-    let mut args_bytes : Vec<u8> = Vec::new();
-    args.serialize(&mut args_bytes).unwrap(); 
+
+    // let mut args_bytes : Vec<u8> = Vec::new();
+    // args.serialize(&mut args_bytes).unwrap(); 
 
     Instruction::new_with_bytes(
         constants::accounts::PUMPFUN,
-        &args_bytes,
+        //&args_bytes,
+        &args.data(),
         vec![
             AccountMeta::new(mint.pubkey(), true),
             AccountMeta::new(PumpFun::get_mint_authority_pda(), false),
@@ -108,16 +113,17 @@ pub fn buy(
     payer: &Keypair,
     mint: &Pubkey,
     fee_recipient: &Pubkey,
-    args: BuyInstructionArgs,
+    //args: BuyInstructionArgs,
+    args: cpi::instruction::Buy,
 ) -> Instruction {
     let bonding_curve: Pubkey = PumpFun::get_bonding_curve_pda(mint).unwrap();
-    // Serialize the args into bytes
-    let mut args_bytes : Vec<u8> = Vec::new();
-    args.serialize(&mut args_bytes).unwrap(); 
+    // let mut args_bytes : Vec<u8> = Vec::new();
+    // args.serialize(&mut args_bytes).unwrap(); 
 
     Instruction::new_with_bytes(
         constants::accounts::PUMPFUN,
-        &args_bytes,
+        //&args_bytes,
+        &args.data(),
         vec![
             AccountMeta::new_readonly(PumpFun::get_global_pda(), false),
             AccountMeta::new(*fee_recipient, false),
@@ -155,15 +161,17 @@ pub fn sell(
     payer: &Keypair,
     mint: &Pubkey,
     fee_recipient: &Pubkey,
-    args: SellInstructionArgs,
+    //args: SellInstructionArgs,
+    args: cpi::instruction::Sell,
 ) -> Instruction {
     let bonding_curve: Pubkey = PumpFun::get_bonding_curve_pda(mint).unwrap();
-    let mut args_bytes : Vec<u8> = Vec::new();
-    args.serialize(&mut args_bytes).unwrap(); 
+    // let mut args_bytes : Vec<u8> = Vec::new();
+    // args.serialize(&mut args_bytes).unwrap(); 
 
     Instruction::new_with_bytes(
         constants::accounts::PUMPFUN,
-        &args_bytes,
+        //&args_bytes,
+        &args.data(),
         vec![
             AccountMeta::new_readonly(PumpFun::get_global_pda(), false),
             AccountMeta::new(*fee_recipient, false),

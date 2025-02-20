@@ -21,6 +21,8 @@ use crate::pumpfun::{
 };
 use hex;
 
+pub const solana_devnet_url : &str = "https://solana-devnet.g.alchemy.com/v2/Vlen2KsFpIkGNdoGIQynPL828MV-MqeS";
+
 
 fn hex_to_pubkey(mint_str: &String) -> Result<Pubkey, String> {
     // Convert the string to a 32-byte array
@@ -45,21 +47,22 @@ pub async fn create_and_buy(
     website: Option<String>,
     amount_sol: u64
 ) -> Result<(), String> {
-    let payer: Keypair = Keypair::new();
+    //let payer: Keypair = Keypair::new();
+    let payer = utils::load_keypair_from_file("~/.config/solana/id.json").expect("Failed to load keypair");
     let public_key = payer.pubkey();
     println!("Loaded Solana Address: {}", public_key);
 
-    let solana_devnet_url = "https://solana-devnet.g.alchemy.com/v2/Vlen2KsFpIkGNdoGIQynPL828MV-MqeS".to_string();
+    //let solana_devnet_url = "https://solana-devnet.g.alchemy.com/v2/Vlen2KsFpIkGNdoGIQynPL828MV-MqeS".to_string();
 
-    let rpc = RpcClient::new(&solana_devnet_url);
+    // let rpc = RpcClient::new(&solana_devnet_url);
 
-    let amount = 2_000_000_000; // 2 SOL (in lamports)
-    match rpc.request_airdrop(&public_key, amount) {
-        Ok(sig) => println!("Airdrop requested. Transaction Signature: {}", sig),
-        Err(err) => eprintln!("Airdrop failed: {:?}", err),
-    }
+    // let amount = 2_000_000_000; // 2 SOL (in lamports)
+    // match rpc.request_airdrop(&public_key, amount) {
+    //     Ok(sig) => println!("Airdrop requested. Transaction Signature: {}", sig),
+    //     Err(err) => eprintln!("Airdrop failed: {:?}", err),
+    // }
 
-    let client: PumpFun<'_> = PumpFun::new(&solana_devnet_url, &payer, None);
+    let client: PumpFun<'_> = PumpFun::new(&solana_devnet_url.to_string(), &payer, None);
     //dbg!(Cluster::Devnet.url());
 
     // Mint keypair
@@ -94,77 +97,79 @@ pub async fn create_and_buy(
 
 }
 
-// pub async fn buy(
-//     mint_str: String,
-//     amount_sol: u64
-// ) -> Result<(), String> {
+pub async fn buy(
+    mint_str: String,
+    amount_sol: u64
+) -> Result<(), String> {
 
-//     let path = "~/.config/solana/id.json";
-//     let payer = utils::load_keypair_from_file(path).expect("Failed to load keypair");
-//     let public_key = payer.pubkey();
-//     println!("Loaded Solana Address: {}", public_key);
-//     dbg!(rpc.get_balance(&public_key).unwrap());
+    let path = "~/.config/solana/id.json";
+    let payer = utils::load_keypair_from_file(path).expect("Failed to load keypair");
+    let public_key = payer.pubkey();
+    println!("Loaded Solana Address: {}", public_key);
+    //dbg!(rpc.get_balance(&public_key).unwrap());
 
-//     let client: PumpFun<'_> = PumpFun::new(Cluster::Devnet, &payer, None, None);
+    //let solana_devnet_url = "https://solana-devnet.g.alchemy.com/v2/Vlen2KsFpIkGNdoGIQynPL828MV-MqeS".to_string();
+    let client: PumpFun<'_> = PumpFun::new(&solana_devnet_url.to_string(), &payer, None);
 
-//     // Mint keypair
-//     let mint: Pubkey = match hex_to_pubkey(&mint_str) {
-//         Ok(pubkey) => pubkey,  // Create Pubkey from byte vector
-//         Err(err) => {
-//             //println!("Failed to decode pubkey string: {}", err);
-//             return Err(format!("Failed to decode pubkey string: {}", err));  // Return on error
-//         }
-//     };
+    // Mint keypair
+    let mint: Pubkey = match hex_to_pubkey(&mint_str) {
+        Ok(pubkey) => pubkey,  // Create Pubkey from byte vector
+        Err(err) => {
+            //println!("Failed to decode pubkey string: {}", err);
+            return Err(format!("Failed to decode pubkey string: {}", err));  // Return on error
+        }
+    };
 
-//     let fee: Option<PriorityFee> = Some(PriorityFee {
-//         limit: Some(200_000),
-//         price: Some(100_000_000),
-//     });  
+    let fee: Option<PriorityFee> = Some(PriorityFee {
+        limit: Some(200_000),
+        price: Some(100_000_000),
+    });  
 
-//     let amount_lamports: u64 = LAMPORTS_PER_SOL * amount_sol;
-//     println!("Amount in SOL: {}", amount_sol);
-//     println!("Amount in LAMPORTS: {}", amount_lamports);
+    let amount_lamports: u64 = LAMPORTS_PER_SOL * amount_sol;
+    println!("Amount in SOL: {}", amount_sol);
+    println!("Amount in LAMPORTS: {}", amount_lamports);
 
-//     // // Buy tokens (ATA will be created automatically if needed)
-//     let signature: Signature = client.buy(&mint, amount_lamports, None, fee).await.unwrap();
-//     println!("Bought tokens: {}", signature);
+    // // Buy tokens (ATA will be created automatically if needed)
+    let signature: Signature = client.buy(&mint, amount_lamports, None, fee).await.unwrap();
+    println!("Bought tokens: {}", signature);
 
-//     Ok(()) 
+    Ok(()) 
 
-// }
+}
 
-// pub async fn sell(
-//     mint_str: String,
-//     amount_sol: u64
-// ) -> Result<(), String> {
+pub async fn sell(
+    mint_str: String,
+    amount_sol: u64
+) -> Result<(), String> {
 
-//     let path = "~/.config/solana/id.json";
-//     let payer = utils::load_keypair_from_file(path).expect("Failed to load keypair");
-//     let public_key = payer.pubkey();
-//     println!("Loaded Solana Address: {}", public_key);
-//     dbg!(rpc.get_balance(&public_key).unwrap());
+    let path = "~/.config/solana/id.json";
+    let payer = utils::load_keypair_from_file(path).expect("Failed to load keypair");
+    let public_key = payer.pubkey();
+    println!("Loaded Solana Address: {}", public_key);
+    //dbg!(rpc.get_balance(&public_key).unwrap());
 
-//     let client: PumpFun<'_> = PumpFun::new(Cluster::Devnet, &payer, None, None);
+    //let solana_devnet_url = "https://solana-devnet.g.alchemy.com/v2/Vlen2KsFpIkGNdoGIQynPL828MV-MqeS".to_string();
+    let client: PumpFun<'_> = PumpFun::new(&solana_devnet_url.to_string(), &payer, None);
 
-//     // Mint keypair
-//     let mint: Pubkey = match hex_to_pubkey(&mint_str) {
-//         Ok(pubkey) => pubkey,  // Create Pubkey from byte vector
-//         Err(err) => {
-//             //println!("Failed to decode pubkey string: {}", err);
-//             return Err(format!("Failed to decode pubkey string: {}", err));  // Return on error
-//         }
-//     };
+    // Mint keypair
+    let mint: Pubkey = match hex_to_pubkey(&mint_str) {
+        Ok(pubkey) => pubkey,  // Create Pubkey from byte vector
+        Err(err) => {
+            //println!("Failed to decode pubkey string: {}", err);
+            return Err(format!("Failed to decode pubkey string: {}", err));  // Return on error
+        }
+    };
 
-//     let fee: Option<PriorityFee> = Some(PriorityFee {
-//         limit: Some(200_000),
-//         price: Some(100_000_000),
-//     });  
+    let fee: Option<PriorityFee> = Some(PriorityFee {
+        limit: Some(200_000),
+        price: Some(100_000_000),
+    });  
 
-//     // Sell tokens (sell all tokens)
-//     let signature: Signature = client.sell(&mint, None, None, fee).await.unwrap();
-//     println!("Sold tokens: {}", signature);
+    // Sell tokens (sell all tokens)
+    let signature: Signature = client.sell(&mint, None, None, fee).await.unwrap();
+    println!("Sold tokens: {}", signature);
 
-//     Ok(()) 
+    Ok(()) 
 
-// }
+}
 
