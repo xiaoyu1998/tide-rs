@@ -2,8 +2,9 @@ use std::fs::OpenOptions;
 use std::io::Write;
 use std::sync::mpsc;
 use std::thread;
+use hex;
 
-use crate::utils;
+use crate::utils::keypair;
 
 use solana_client::rpc_client::{RpcClient};
 use solana_sdk::{
@@ -12,16 +13,15 @@ use solana_sdk::{
     signature::{Signer, Keypair, Signature},
 };
 
-use crate::pumpfun::{
+use crate::tx_router::pumpfun::{
     accounts::BondingCurveAccount, 
     utils::CreateTokenMetadata, 
     PriorityFee, 
     PumpFun,
     error::ClientError
 };
-use hex;
 
-pub const solana_devnet_url : &str = "https://solana-devnet.g.alchemy.com/v2/Vlen2KsFpIkGNdoGIQynPL828MV-MqeS";
+pub const SOLANA_DEVNET_URL : &str = "https://solana-devnet.g.alchemy.com/v2/Vlen2KsFpIkGNdoGIQynPL828MV-MqeS";
 
 
 fn hex_to_pubkey(mint_str: &String) -> Result<Pubkey, String> {
@@ -48,13 +48,13 @@ pub async fn create_and_buy(
     amount_sol: u64
 ) -> Result<(), String> {
     //let payer: Keypair = Keypair::new();
-    let payer = utils::load_keypair_from_file("~/.config/solana/id.json").expect("Failed to load keypair");
+    let payer = keypair::load_keypair_from_file("~/.config/solana/id.json").expect("Failed to load keypair");
     let public_key = payer.pubkey();
     println!("Loaded Solana Address: {}", public_key);
 
-    //let solana_devnet_url = "https://solana-devnet.g.alchemy.com/v2/Vlen2KsFpIkGNdoGIQynPL828MV-MqeS".to_string();
+    //let SOLANA_DEVNET_URL = "https://solana-devnet.g.alchemy.com/v2/Vlen2KsFpIkGNdoGIQynPL828MV-MqeS".to_string();
 
-    // let rpc = RpcClient::new(&solana_devnet_url);
+    // let rpc = RpcClient::new(&SOLANA_DEVNET_URL);
 
     // let amount = 2_000_000_000; // 2 SOL (in lamports)
     // match rpc.request_airdrop(&public_key, amount) {
@@ -62,7 +62,7 @@ pub async fn create_and_buy(
     //     Err(err) => eprintln!("Airdrop failed: {:?}", err),
     // }
 
-    let client: PumpFun<'_> = PumpFun::new(&solana_devnet_url.to_string(), &payer, None);
+    let client: PumpFun<'_> = PumpFun::new(&SOLANA_DEVNET_URL.to_string(), &payer, None);
     //dbg!(Cluster::Devnet.url());
 
     // Mint keypair
@@ -103,13 +103,13 @@ pub async fn buy(
 ) -> Result<(), String> {
 
     let path = "~/.config/solana/id.json";
-    let payer = utils::load_keypair_from_file(path).expect("Failed to load keypair");
+    let payer = keypair::load_keypair_from_file(path).expect("Failed to load keypair");
     let public_key = payer.pubkey();
     println!("Loaded Solana Address: {}", public_key);
     //dbg!(rpc.get_balance(&public_key).unwrap());
 
-    //let solana_devnet_url = "https://solana-devnet.g.alchemy.com/v2/Vlen2KsFpIkGNdoGIQynPL828MV-MqeS".to_string();
-    let client: PumpFun<'_> = PumpFun::new(&solana_devnet_url.to_string(), &payer, None);
+    //let SOLANA_DEVNET_URL = "https://solana-devnet.g.alchemy.com/v2/Vlen2KsFpIkGNdoGIQynPL828MV-MqeS".to_string();
+    let client: PumpFun<'_> = PumpFun::new(&SOLANA_DEVNET_URL.to_string(), &payer, None);
 
     // Mint keypair
     let mint: Pubkey = match hex_to_pubkey(&mint_str) {
@@ -143,13 +143,13 @@ pub async fn sell(
 ) -> Result<(), String> {
 
     let path = "~/.config/solana/id.json";
-    let payer = utils::load_keypair_from_file(path).expect("Failed to load keypair");
+    let payer = keypair::load_keypair_from_file(path).expect("Failed to load keypair");
     let public_key = payer.pubkey();
     println!("Loaded Solana Address: {}", public_key);
     //dbg!(rpc.get_balance(&public_key).unwrap());
 
-    //let solana_devnet_url = "https://solana-devnet.g.alchemy.com/v2/Vlen2KsFpIkGNdoGIQynPL828MV-MqeS".to_string();
-    let client: PumpFun<'_> = PumpFun::new(&solana_devnet_url.to_string(), &payer, None);
+    //let SOLANA_DEVNET_URL = "https://solana-devnet.g.alchemy.com/v2/Vlen2KsFpIkGNdoGIQynPL828MV-MqeS".to_string();
+    let client: PumpFun<'_> = PumpFun::new(&SOLANA_DEVNET_URL.to_string(), &payer, None);
 
     // Mint keypair
     let mint: Pubkey = match hex_to_pubkey(&mint_str) {

@@ -1,20 +1,12 @@
-mod create_account;
-mod create_buy;
-mod monitor_create_buy;
-mod utils;
-mod monitor;
-// mod pumpfun_api;
-mod tx_parser;
+mod strategies;
 mod tx_router;
-mod pumpfun;
+mod utils;
 
 use tokio::net::{TcpListener, TcpStream};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use std::env;
 
 use clap::{Parser, Subcommand};
-
-use tx_router::handlers;
 
 /// My Project with Subcommands
 #[derive(Parser)]
@@ -35,9 +27,54 @@ enum Commands {
     },
     /// Start Tx Rounter
     StartTxRouter,
+    /// Buy
+    Buy{
+        #[arg(short, long, default_value_t = String::from("solana"))]
+        network: String,   
 
+        #[arg(short, long, default_value_t = String::from("pumpfun"))]
+        contract: String, 
+
+        #[arg(short, long)]
+        mint_str: String,   
+
+        #[arg(short, long)]
+        amount: u64,             
+    },
+    /// Sell
+    Sell{
+        #[arg(short, long, default_value_t = String::from("solana"))]
+        network: String,   
+
+        #[arg(short, long, default_value_t = String::from("pumpfun"))]
+        contract: String, 
+
+        #[arg(short, long)]
+        mint_str: String,   
+
+        #[arg(short, long)]
+        amount: u64,             
+    },
+    /// Monitor pumpfun launch raydium and buy
+    MonitorCreateBuy {
+        #[arg(short, long, default_value_t = String::from("solana"))]
+        network: String,   
+
+        #[arg(short, long, default_value_t = String::from("pumpfun"))]
+        contract: String, 
+
+        /// Name of the input file
+        #[arg(short, long)]
+        amount: u64,
+    },
     /// Create Token and pumpfun pairs
     CreateBuy{
+        #[arg(short, long, default_value_t = String::from("solana"))]
+        network: String,   
+
+        #[arg(short, long, default_value_t = String::from("pumpfun"))]
+        contract: String, 
+
         #[arg(short, long)]
         name: String,   
 
@@ -60,25 +97,8 @@ enum Commands {
         website: Option<String>,  
 
         #[arg(short, long)]
-        amount_sol: u64,             
+        amount: u64,             
     },
-
-    /// Monitor pumpfun launch raydium and buy
-    MonitorCreateBuy {
-        /// Name of the input file
-        #[arg(short, long)]
-        amount_sol: u64,
-    },
-    // /// Convert a file to a specific format
-    // Convert {
-    //     /// Input file name
-    //     #[arg(short, long)]
-    //     input: String,
-
-    //     /// Output format
-    //     #[arg(short, long)]
-    //     format: String,
-    // },
     /// start mm-tide
     Start,
 }
@@ -89,10 +109,36 @@ async fn main() -> tokio::io::Result<()> {
     let cli = Cli::parse();
 
     match &cli.command {
-        Commands::Create { numbers } => {
-            let _ = create_account::execute(*numbers);
+        Commands::Start => {
+            //let _ = start_server().await;
+        }
+        Commands::StartTxRouter => {
+            let _ = tx_router::handlers::start().await;
+        }
+        Commands::Buy { network, contract, mint_str, amount } => {
+            let _ = strategies::monitor_create_buy::execute(
+                network.clone(),
+                contract.clone(),
+                *amount
+            ).await;
+        }
+        Commands::Sell { network, contract, mint_str, amount } => {
+            let _ = strategies::monitor_create_buy::execute(
+                network.clone(),
+                contract.clone(),
+                *amount
+            ).await;
+        }
+        Commands::MonitorCreateBuy { network, contract, amount } => {
+            let _ = strategies::monitor_create_buy::execute(
+                network.clone(),
+                contract.clone(),
+                *amount
+            ).await;
         }
         Commands::CreateBuy { 
+            network,
+            contract,
             name,
             symbol,
             description,
@@ -100,9 +146,11 @@ async fn main() -> tokio::io::Result<()> {
             twitter,
             telegram,
             website,
-            amount_sol
+            amount
         } => {
-            let _ = create_buy::execute(
+            let _ = strategies::create_buy::execute(
+                network.clone(),
+                contract.clone(),
                 name.clone(),
                 symbol.clone(),
                 description.clone(),
@@ -110,17 +158,11 @@ async fn main() -> tokio::io::Result<()> {
                 twitter.clone(),
                 telegram.clone(),
                 website.clone(),
-                *amount_sol
+                *amount
             ).await;;
         }
-        Commands::MonitorCreateBuy { amount_sol } => {
-            let _ = monitor_create_buy::execute(*amount_sol).await;
-        }
-        Commands::Start => {
-            //let _ = start_server().await;
-        }
-        Commands::StartTxRouter => {
-            let _ = tx_router::handlers::start().await;
+        Commands::Create { numbers } => {
+            let _ = strategies::create_account::execute(*numbers);
         }
     }
 

@@ -17,7 +17,7 @@ use tokio::sync::{mpsc, broadcast};
 use tokio::time::{sleep, Duration};
 use std::str::FromStr;
 use std::error::Error;
-use crate::tx_parser;
+use crate::utils::tx_parser;
 
 async fn get_newest_slot(rpc_client: &RpcClient) -> Result<u64, Box<dyn Error>> {
     // Fetch the latest slot
@@ -82,10 +82,6 @@ pub async fn execute(
     let rpc_client = RpcClient::new(solana_devnet_url);
 
     let mut start_slot = 360083993;
-    //dbg!("solana_url", cluster.url());
-    // let sig_str = "xYEGeaXDtSZJnhq1uNdu6CsztdYRL44Aaeq6XcYZPU9jPALH8iTLxjNvUq4V7mkdPij4UbgNBuLTj3Rp3o8GL4e".to_string();
-    // let mut last_signature: Option<Signature> = Some(Signature::from_str(sig_str.as_str()).unwrap());
-    //let mut last_signature: Option<Signature> ;
 
     loop {
         let end_slot = get_newest_slot(&rpc_client).await.unwrap();

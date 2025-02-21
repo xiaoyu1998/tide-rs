@@ -1,9 +1,4 @@
-use anchor_client::{
-    solana_sdk::{
-        signature::Keypair,
-    },
-};
-
+use solana_sdk::{signature::Keypair};
 use std::fs::File;
 use std::path::Path;
 use std::io::Read;

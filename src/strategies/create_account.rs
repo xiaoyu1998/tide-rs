@@ -3,15 +3,7 @@ use std::io::Write;
 use std::sync::mpsc;
 use std::thread;
 
-use anchor_client::{
-    solana_client::rpc_client::RpcClient,
-    solana_sdk::{
-        native_token::LAMPORTS_PER_SOL,
-        signature::{Keypair, Signature},
-        signer::Signer,
-    },
-    Cluster,
-};
+use solana_sdk::{signature::{Keypair, Signature}};
 
 pub const NUMBER_PER_WORKER: u64 = 100;
 pub const ACCOUNTS_TXT: &str = "accounts.txt";

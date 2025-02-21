@@ -11,7 +11,7 @@
 //! - `sell`: Instruction to sell tokens back to the bonding curve in exchange for SOL.
 
 // use borsh::{BorshSerialize, BorshDeserialize};
-use crate::pumpfun::{constants, PumpFun};
+use crate::tx_router::pumpfun::{constants, PumpFun};
 
 use solana_sdk::{
     instruction::{AccountMeta, Instruction},

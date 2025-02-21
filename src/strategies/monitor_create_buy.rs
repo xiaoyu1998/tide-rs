@@ -11,20 +11,24 @@ use anchor_client::{
     Cluster,
 };
 use pumpfun::{
-    accounts::BondingCurveAccount, 
-    utils::CreateTokenMetadata, 
-    PriorityFee, 
-    PumpFun,
-    error::ClientError,
+    // accounts::BondingCurveAccount, 
+    // utils::CreateTokenMetadata, 
+    // PriorityFee, 
+    // PumpFun,
+    // error::ClientError,
     cpi
 };
 use rand::random;
 
-use crate::monitor;
-use crate::tx_parser;
+use crate::strategies::monitor;
+use crate::utils::tx_parser;
 use crate::tx_router::client_apis::buy;
 
-pub async fn execute(sol_amount: u64) {
+pub async fn execute(
+    network: String,
+    contract: String,
+    amount: u64
+) {
 
     // Create an async channel for logs
     let (instr_tx, instr_rx) = mpsc::channel::<Vec<tx_parser::Instruction>>(100);
@@ -46,7 +50,7 @@ pub async fn execute(sol_amount: u64) {
 
     // Spawn a separate task to process instrs
     let instr_handle = tokio::spawn(async move {
-        process(sol_amount, instr_rx, instr_stop_rx).await;
+        process(network.clone(), contract.clone(), amount, instr_rx, instr_stop_rx).await;
     });
 
     // // Wait for Ctrl+C signal
@@ -60,7 +64,13 @@ pub async fn execute(sol_amount: u64) {
 }
 
 // Function to process in a separate thread
-async fn process(sol_amount: u64, mut instr_rx: mpsc::Receiver<Vec<tx_parser::Instruction>>, mut stop_rx: broadcast::Receiver<()>) {
+async fn process(
+    network: String,
+    contract: String,
+    amount: u64, 
+    mut instr_rx: mpsc::Receiver<Vec<tx_parser::Instruction>>, 
+    mut stop_rx: broadcast::Receiver<()>
+) {
     tokio::select! {
         // Process instrs
         Some(instrs) = instr_rx.recv() => {
@@ -71,8 +81,10 @@ async fn process(sol_amount: u64, mut instr_rx: mpsc::Receiver<Vec<tx_parser::In
                 if instr.action == "create_buy".to_string() {
                     // Call the buy function and handle errors
                     match buy(
+                        network.clone(),
+                        contract.clone(),
                         instr.params.clone(),
-                        sol_amount
+                        amount
                     ).await {
                         Ok(_) => {
                             println!("Buy successful for action: {}", instr.action);

@@ -24,7 +24,11 @@ use hex;
 use reqwest::Client;
 use crate::tx_router::types;
 
+pub const TX_ROUTER_URL : &str = "https://solana-devnet.g.alchemy.com/v2/Vlen2KsFpIkGNdoGIQynPL828MV-MqeS";
+
 pub async fn create_and_buy(
+    network: String,
+    contract: String,
     name: String,
     symbol: String,
     description: String,
@@ -32,17 +36,19 @@ pub async fn create_and_buy(
     twitter: Option<String>,
     telegram: Option<String>,
     website: Option<String>,
-    amount_sol: u64
+    amount: u64
 ) -> Result<(), String> {
 
     // Define the URL of the API endpoint
-    let url = "http://127.0.0.1:3030/create_and_buy";
+    //let url = "http://127.0.0.1:3030/create_and_buy";
 
     // Create the client and send the request
     let client = Client::new();
 
     // Create the request body
     let create_and_buy_request = types::CreateAndBuyRequest {
+        network,
+        contract,
         name,
         symbol,
         description,
@@ -50,14 +56,14 @@ pub async fn create_and_buy(
         twitter,
         telegram,
         website,
-        amount_sol
+        amount
     };
 
     println!("create_and_buy: {:?}", create_and_buy_request);
 
     // Send the POST request
     let response = client
-        .post(url)
+        .post(TX_ROUTER_URL)
         .json(&create_and_buy_request)  // Serialize the BuyRequest struct into JSON
         .send()
         .await;
@@ -81,25 +87,29 @@ pub async fn create_and_buy(
 }
 
 pub async fn buy(
+    network: String,
+    contract: String,
     mint_str: String,
-    amount_sol: u64
+    amount: u64
 ) -> Result<(), String> {
 
     // Define the URL of the API endpoint
-    let url = "http://127.0.0.1:3030/buy";
+    //let url = "http://127.0.0.1:3030/buy";
 
     // Create the client and send the request
     let client = Client::new();
 
     // Create the request body
     let buy_request = types::BuyRequest {
+        network,
+        contract,
         mint_str,
-        amount_sol,
+        amount,
     };
 
     // Send the POST request
     let response = client
-        .post(url)
+        .post(TX_ROUTER_URL)
         .json(&buy_request)  // Serialize the BuyRequest struct into JSON
         .send()
         .await;
@@ -122,25 +132,29 @@ pub async fn buy(
 }
 
 pub async fn sell(
+    network: String,
+    contract: String,
     mint_str: String,
-    amount_sol: u64
+    amount: u64
 ) -> Result<(), String> {
 
     // Define the URL of the API endpoint
-    let url = "http://127.0.0.1:3030/sell";
+    //let url = "http://127.0.0.1:3030/sell";
 
     // Create the client and send the request
     let client = Client::new();
 
     // Create the request body
     let sell_request = types::SellRequest {
+        network,
+        contract,
         mint_str,
-        amount_sol,
+        amount,
     };
 
     // Send the POST request
     let response = client
-        .post(url)
+        .post(TX_ROUTER_URL)
         .json(&sell_request)  // Serialize the SellRequest struct into JSON
         .send()
         .await;
