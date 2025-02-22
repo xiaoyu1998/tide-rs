@@ -9,7 +9,7 @@ use crate::tx_router::client_apis::create_and_buy;
 
 pub async fn execute(
     network: String,
-    contract: String,
+    market: String,
     name: String,
     symbol: String,
     description: String,
@@ -17,12 +17,12 @@ pub async fn execute(
     twitter: Option<String>,
     telegram: Option<String>,
     website: Option<String>,
-    amount: u64
+    amount: f64
 ) -> Result<(), String> {
 
    match create_and_buy(
        network,
-       contract,
+       market,
        name,
        symbol,
        description,

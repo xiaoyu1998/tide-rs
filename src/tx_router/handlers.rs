@@ -10,7 +10,7 @@ use crate::tx_router::types;
 // Buy handler function
 async fn create_and_buy_handler(body: types::CreateAndBuyRequest) -> Result<warp::reply::Json, Infallible> {
     println!("create_and_buy_handler: {:?}", body);
-    let result = if body.network == "solana" && body.contract == "pumpfun" {
+    let result = if body.network == "solana" && body.market == "pumpfun" {
         pumpfun_apis::create_and_buy(
             body.name, 
             body.symbol,
@@ -22,7 +22,7 @@ async fn create_and_buy_handler(body: types::CreateAndBuyRequest) -> Result<warp
             body.amount
         ).await
     } else {
-        Err("Network and contract mismatch".to_string())
+        Err("Network and market mismatch".to_string())
     };
 
     match result {
@@ -46,10 +46,10 @@ async fn create_and_buy_handler(body: types::CreateAndBuyRequest) -> Result<warp
 // Buy handler function
 async fn buy_handler(body: types::BuyRequest) -> Result<warp::reply::Json, Infallible> {
     println!("buy_handler: {:?}", body);
-    let result = if body.network == "solana" && body.contract == "pumpfun" {
+    let result = if body.network == "solana" && body.market == "pumpfun" {
         pumpfun_apis::buy(body.mint_str, body.amount).await
     } else {
-        Err("Network and contract mismatch".to_string())
+        Err("Network and market mismatch".to_string())
     };
 
     match result {
@@ -73,10 +73,10 @@ async fn buy_handler(body: types::BuyRequest) -> Result<warp::reply::Json, Infal
 // Sell handler function
 async fn sell_handler(body: types::SellRequest) -> Result<warp::reply::Json, Infallible> {
     println!("sell_handler: {:?}", body);
-    let result = if body.network == "solana" && body.contract == "pumpfun" {
+    let result = if body.network == "solana" && body.market == "pumpfun" {
         pumpfun_apis::sell(body.mint_str, body.amount).await
     } else {
-        Err("Network and contract mismatch".to_string())
+        Err("Network and market mismatch".to_string())
     };
 
     match result {

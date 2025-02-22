@@ -5,7 +5,7 @@ use serde::Serialize;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CreateAndBuyRequest {
     pub network: String,
-    pub contract: String,
+    pub market: String,
     pub name: String,
     pub symbol: String,
     pub description: String,
@@ -13,23 +13,23 @@ pub struct CreateAndBuyRequest {
     pub twitter: Option<String>,
     pub telegram: Option<String>,
     pub website: Option<String>,
-    pub amount: u64
+    pub amount: f64
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct BuyRequest {
     pub network: String,
-    pub contract: String,
+    pub market: String,
     pub mint_str: String,
-    pub amount: u64,
+    pub amount: f64,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SellRequest {
     pub network: String,
-    pub contract: String,
+    pub market: String,
     pub mint_str: String,
-    pub amount: u64,
+    pub amount: f64,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

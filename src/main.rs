@@ -27,19 +27,59 @@ enum Commands {
     },
     /// Start Tx Rounter
     StartTxRouter,
+    
+    /// Drawline
+    Drawline{
+        #[arg(short, long, default_value_t = String::from("solana"))]
+        network: String,   
+
+        #[arg(short, long, default_value_t = String::from("pumpfun"))]
+        market: String, 
+
+        #[arg(short, long)]
+        mint_str: String,   
+
+        #[arg(short, long)]
+        price_ceiling: f64,  
+
+        #[arg(short, long)]
+        price_floor: f64,  
+
+        #[arg(short, long)]
+        tx_trade_size_Max: u64,  
+
+        #[arg(short, long)]
+        tx_trade_size_Min: u64,   
+
+        #[arg(short, long)]
+        trading_frequency: u64,    
+
+        #[arg(short, long)]
+        gas: u64,     
+
+        #[arg(short, long)]
+        task_mode: u64, 
+ 
+        #[arg(short, long)]
+        trend: u64,    
+
+        #[arg(short, long)]
+        wallets: u64,              
+    },
     /// Buy
     Buy{
         #[arg(short, long, default_value_t = String::from("solana"))]
         network: String,   
 
         #[arg(short, long, default_value_t = String::from("pumpfun"))]
-        contract: String, 
+        market: String, 
 
         #[arg(short, long)]
         mint_str: String,   
 
         #[arg(short, long)]
-        amount: u64,             
+        amount: f64,  
+
     },
     /// Sell
     Sell{
@@ -47,13 +87,14 @@ enum Commands {
         network: String,   
 
         #[arg(short, long, default_value_t = String::from("pumpfun"))]
-        contract: String, 
+        market: String, 
 
         #[arg(short, long)]
         mint_str: String,   
 
-        #[arg(short, long)]
-        amount: u64,             
+        #[arg(short, long, default_value_t = 0.0)]
+        amount: f64, 
+            
     },
     /// Monitor pumpfun launch raydium and buy
     MonitorCreateBuy {
@@ -61,19 +102,19 @@ enum Commands {
         network: String,   
 
         #[arg(short, long, default_value_t = String::from("pumpfun"))]
-        contract: String, 
+        market: String, 
 
         /// Name of the input file
         #[arg(short, long)]
-        amount: u64,
+        amount: f64,
     },
     /// Create Token and pumpfun pairs
     CreateBuy{
-        #[arg(short, long, default_value_t = String::from("solana"))]
+        #[arg(long, default_value_t = String::from("solana"))]
         network: String,   
 
         #[arg(short, long, default_value_t = String::from("pumpfun"))]
-        contract: String, 
+        market: String, 
 
         #[arg(short, long)]
         name: String,   
@@ -97,7 +138,7 @@ enum Commands {
         website: Option<String>,  
 
         #[arg(short, long)]
-        amount: u64,             
+        amount: f64,             
     },
     /// start mm-tide
     Start,
@@ -115,30 +156,30 @@ async fn main() -> tokio::io::Result<()> {
         Commands::StartTxRouter => {
             let _ = tx_router::handlers::start().await;
         }
-        Commands::Buy { network, contract, mint_str, amount } => {
+        Commands::Buy { network, market, mint_str, amount, limit_price } => {
             let _ = strategies::monitor_create_buy::execute(
                 network.clone(),
-                contract.clone(),
+                market.clone(),
                 *amount
             ).await;
         }
-        Commands::Sell { network, contract, mint_str, amount } => {
+        Commands::Sell { network, market, mint_str, amount, limit_price } => {
             let _ = strategies::monitor_create_buy::execute(
                 network.clone(),
-                contract.clone(),
+                market.clone(),
                 *amount
             ).await;
         }
-        Commands::MonitorCreateBuy { network, contract, amount } => {
+        Commands::MonitorCreateBuy { network, market, amount } => {
             let _ = strategies::monitor_create_buy::execute(
                 network.clone(),
-                contract.clone(),
+                market.clone(),
                 *amount
             ).await;
         }
         Commands::CreateBuy { 
             network,
-            contract,
+            market,
             name,
             symbol,
             description,
@@ -150,7 +191,7 @@ async fn main() -> tokio::io::Result<()> {
         } => {
             let _ = strategies::create_buy::execute(
                 network.clone(),
-                contract.clone(),
+                market.clone(),
                 name.clone(),
                 symbol.clone(),
                 description.clone(),

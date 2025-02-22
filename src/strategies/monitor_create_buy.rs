@@ -26,8 +26,8 @@ use crate::tx_router::client_apis::buy;
 
 pub async fn execute(
     network: String,
-    contract: String,
-    amount: u64
+    market: String,
+    amount: f64
 ) {
 
     // Create an async channel for logs
@@ -50,7 +50,7 @@ pub async fn execute(
 
     // Spawn a separate task to process instrs
     let instr_handle = tokio::spawn(async move {
-        process(network.clone(), contract.clone(), amount, instr_rx, instr_stop_rx).await;
+        process(network.clone(), market.clone(), amount, instr_rx, instr_stop_rx).await;
     });
 
     // // Wait for Ctrl+C signal
@@ -66,8 +66,8 @@ pub async fn execute(
 // Function to process in a separate thread
 async fn process(
     network: String,
-    contract: String,
-    amount: u64, 
+    market: String,
+    amount: f64, 
     mut instr_rx: mpsc::Receiver<Vec<tx_parser::Instruction>>, 
     mut stop_rx: broadcast::Receiver<()>
 ) {
@@ -82,7 +82,7 @@ async fn process(
                     // Call the buy function and handle errors
                     match buy(
                         network.clone(),
-                        contract.clone(),
+                        market.clone(),
                         instr.params.clone(),
                         amount
                     ).await {

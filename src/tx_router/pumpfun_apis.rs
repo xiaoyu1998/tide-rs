@@ -45,7 +45,7 @@ pub async fn create_and_buy(
     twitter: Option<String>,
     telegram: Option<String>,
     website: Option<String>,
-    amount_sol: u64
+    amount_sol: f64
 ) -> Result<(), String> {
     //let payer: Keypair = Keypair::new();
     let payer = keypair::load_keypair_from_file("~/.config/solana/id.json").expect("Failed to load keypair");
@@ -85,7 +85,7 @@ pub async fn create_and_buy(
         price: Some(100_000_000),
     });  
 
-    let amount_lamports: u64 = LAMPORTS_PER_SOL * amount_sol;
+    let amount_lamports: u64 = (LAMPORTS_PER_SOL as f64 * amount_sol).round() as u64;
     println!("Amount in SOL: {}", amount_sol);
     println!("Amount in LAMPORTS: {}", amount_lamports);
 
@@ -99,7 +99,7 @@ pub async fn create_and_buy(
 
 pub async fn buy(
     mint_str: String,
-    amount_sol: u64
+    amount_sol: f64
 ) -> Result<(), String> {
 
     let path = "~/.config/solana/id.json";
@@ -125,7 +125,7 @@ pub async fn buy(
         price: Some(100_000_000),
     });  
 
-    let amount_lamports: u64 = LAMPORTS_PER_SOL * amount_sol;
+    let amount_lamports: u64 = (LAMPORTS_PER_SOL as f64 * amount_sol).round() as u64;
     println!("Amount in SOL: {}", amount_sol);
     println!("Amount in LAMPORTS: {}", amount_lamports);
 
@@ -139,7 +139,7 @@ pub async fn buy(
 
 pub async fn sell(
     mint_str: String,
-    amount_sol: u64
+    amount: f64
 ) -> Result<(), String> {
 
     let path = "~/.config/solana/id.json";
@@ -165,8 +165,14 @@ pub async fn sell(
         price: Some(100_000_000),
     });  
 
+    let amount_meme = if amount as u64 == 0 {
+        None
+    } else {
+        Some(amount as u64)
+    };
+
     // Sell tokens (sell all tokens)
-    let signature: Signature = client.sell(&mint, None, None, fee).await.unwrap();
+    let signature: Signature = client.sell(&mint, amount_meme, None, fee).await.unwrap();
     println!("Sold tokens: {}", signature);
 
     Ok(()) 
