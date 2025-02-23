@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 margin-meme = { path = "./crates/margin-meme" }
-artemis-core = { path = "/crates/artemis-core"}
+alloy = { version = "0.7.3", features = ["full"] }
 pumpfun = { path = "./crates/pumpfun-rs/crates/pumpfun"}
 pumpfun-cpi = { path = "./crates/pumpfun-rs/crates/pumpfun-cpi"}
 anchor-client = { version = "0.30.1", features = ["async"] }

@@ -5,13 +5,18 @@ use std::thread;
 use hex;
 
 pub const BASE_SEPOLIA : &str = "https://base-sepolia.g.alchemy.com/v2/78EX3W8zQaMXPMs1RPt3nhTDefmKkuEB";
-
+use alloy::{
+    network::{EthereumWallet, Ethereum},
+    signers::local::PrivateKeySigner,
+    providers::ProviderBuilder, 
+};
 
 pub async fn buy(
     meme: String,
     amount: f64,
     price_limit: f64,
 ) -> Result<(), String> {
+    
    let signer: PrivateKeySigner = args.private_key.parse().expect("should parse private key");
    let wallet = EthereumWallet::from(signer.clone());
    let rpc = (&args.rpc).parse()?;
