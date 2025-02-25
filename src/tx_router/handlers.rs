@@ -4,13 +4,13 @@ use std::convert::Infallible;
 //use base_sdk::signer::keypair::Keypair;
 use tokio::task;
 use crate::tx_router::types;
-use crate::tx_router::margin_mm;
+use crate::tx_router::margin_mm_apis;
 
 // Buy handler function
 async fn buy_handler(body: types::BuyRequest) -> Result<warp::reply::Json, Infallible> {
     println!("buy_handler: {:?}", body);
     let result = if body.network == "base" && body.market == "marginmm" {
-        margin_mm::buy(body.mint_str, body.amount, 0.0).await
+        margin_mm_apis::buy(body.token, body.amount, 0.0).await
     } else {
         Err("Network and market mismatch".to_string())
     };
@@ -37,7 +37,7 @@ async fn buy_handler(body: types::BuyRequest) -> Result<warp::reply::Json, Infal
 async fn sell_handler(body: types::SellRequest) -> Result<warp::reply::Json, Infallible> {
     println!("sell_handler: {:?}", body);
     let result = if body.network == "base" && body.market == "marginmm" {
-        margin_mm::sell(body.mint_str, body.amount, 0.0).await
+        margin_mm_apis::sell(body.token, body.amount, 0.0).await
     } else {
         Err("Network and market mismatch".to_string())
     };

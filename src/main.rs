@@ -74,6 +74,8 @@ enum Commands {
         #[arg(short, long)]
         amount: f64,  
 
+        #[arg(short, long)]
+        price_limit: f64, 
     },
     /// Sell
     Sell{
@@ -88,6 +90,9 @@ enum Commands {
 
         #[arg(short, long, default_value_t = 0.0)]
         amount: f64, 
+
+        #[arg(short, long, default_value_t = 0.0)]
+        price_limit: f64, 
             
     },
     /// start mm-tide
@@ -106,18 +111,22 @@ async fn main() -> tokio::io::Result<()> {
         Commands::StartTxRouter => {
             let _ = tx_router::handlers::start().await;
         }
-        Commands::Buy { network, market, token, amount, limit_price } => {
+        Commands::Buy { network, market, token, amount, price_limit } => {
             let _ = strategies::buy::execute(
                 network.clone(),
                 market.clone(),
-                *amount
+                token.clone(),
+                *amount,
+                *price_limit,
             ).await;
         }
-        Commands::Sell { network, market, token, amount, limit_price } => {
+        Commands::Sell { network, market, token, amount, price_limit } => {
             let _ = strategies::sell::execute(
                 network.clone(),
                 market.clone(),
-                *amount
+                token.clone(),
+                *amount,
+                *price_limit,
             ).await;
         }
         Commands::Drawline { 
