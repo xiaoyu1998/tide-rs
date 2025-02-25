@@ -1,35 +1,22 @@
 use serde::Deserialize;
 use serde::Serialize;
 
-// Define structs for request and response
-#[derive(Serialize, Deserialize, Debug)]
-pub struct CreateAndBuyRequest {
-    pub network: String,
-    pub market: String,
-    pub name: String,
-    pub symbol: String,
-    pub description: String,
-    pub photo: String,
-    pub twitter: Option<String>,
-    pub telegram: Option<String>,
-    pub website: Option<String>,
-    pub amount: f64
-}
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct BuyRequest {
     pub network: String,
     pub market: String,
-    pub mint_str: String,
+    pub token: String,
     pub amount: f64,
+    pub price_limit: f64,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SellRequest {
     pub network: String,
     pub market: String,
-    pub mint_str: String,
+    pub token: String,
     pub amount: f64,
+    pub price_limit: f64,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
