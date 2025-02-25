@@ -5,7 +5,7 @@ use alloy::{
     signers::local::PrivateKeySigner,
     sol_types::private::{Address},
     providers::{ProviderBuilder}, 
-    abi::encode,
+    dyn_abi::abi::encode,
 };
 use alloy_primitives::{
     FixedBytes,
@@ -50,7 +50,8 @@ pub async fn buy(
    let pools = pools._0;
    let exchange_router = ExchangeRouter::new(exchange_router_address, Arc::new(client.clone()));
 
-   let base_decimals = pools[0].assets[1].decimals;
+   //let base_decimals = pools[0].assets[1].decimals;
+   let base_decimals = U256::from(6);//usdt
    let amount0_in = (amount * base_decimals as f64) as U256;
    let amount1_out = if price_limit == U256::ZERO {
         U256::ZERO
@@ -75,8 +76,8 @@ pub async fn buy(
     };
 
     let multicallArgs = [
-        encode(params_send_tokens.tokenize()),
-        encode(params_swap.tokenize()),
+        params_send_tokens.abi_encode(),
+        params_swap.abi_encode(),
     ];
 
     let call_build = exchange_router.multicall(multicallArgs);
