@@ -22,7 +22,7 @@ pub fn load_signer_from_file(path: &str) -> Result<PrivateKeySigner, Box<dyn Err
         .map_err(|_| "Invalid private key hex format")?;
 
     // Create the signer
-    let signer = PrivateKeySigner::<Ethereum>::from_bytes((&private_key_bytes).into())
+    let signer = PrivateKeySigner::from_bytes((&private_key_bytes).into())
         .map_err(|_| "Failed to create signer")?;
 
     Ok(signer)

@@ -5,9 +5,13 @@ use alloy::{
     signers::local::PrivateKeySigner,
     sol_types::private::{Address},
     providers::{ProviderBuilder}, 
-    dyn_abi::abi::encode,
 };
+use alloy::sol_types::SolValue;
+use alloy::sol_types::SolCall;
+use alloy::transports::http::reqwest::Url;
+
 use alloy_primitives::{
+    Bytes,
     FixedBytes,
     U256,
 };
@@ -33,9 +37,11 @@ pub async fn buy(
 
    let signer: PrivateKeySigner = keypair::load_signer_from_file(".env").expect("Failed to load PrivateKeySigner");
    let wallet = EthereumWallet::from(signer.clone());
-   let owner = wallet.signer_addresses()[0];
+   let owner = wallet.default_signer().address();
+   let chain_id: u64 = 84532;
 
-   let rpc = (BASE_SEPOLIA).parse().map_err(|e| e.to_string())?;
+   //let rpc = (BASE_SEPOLIA).parse().map_err(|e| e.to_string())?;
+   let rpc = Url::parse(BASE_SEPOLIA).map_err(|e| e.to_string())?;
    let client = ProviderBuilder::new().with_cached_nonce_management().wallet(wallet.clone()).on_http(rpc);
    let contracts = contracts::load_contracts("contracts.json");
    let data_store_address = contracts::get_contract_address(&contracts, "DataStore").unwrap();
@@ -51,12 +57,12 @@ pub async fn buy(
    let exchange_router = ExchangeRouter::new(exchange_router_address, Arc::new(client.clone()));
 
    //let base_decimals = pools[0].assets[1].decimals;
-   let base_decimals = U256::from(6);//usdt
-   let amount0_in = (amount * base_decimals as f64) as U256;
-   let amount1_out = if price_limit == U256::ZERO {
+   //let base_decimals = U256::from(6);//usdt
+   let amount0_in = U256::from((amount * 1000000 as f64) as u64);
+   let amount1_out = if U256::from(price_limit as u64) == U256::ZERO {
         U256::ZERO
    } else {
-        (amount / price_limit) as U256
+        U256::from((amount / price_limit) as u64)
    };
 
    let params_send_tokens = ExchangeRouter::sendTokensCall {
@@ -75,14 +81,19 @@ pub async fn buy(
         to: owner,
     };
 
-    let multicallArgs = [
-        params_send_tokens.abi_encode(),
-        params_swap.abi_encode(),
+    let multicallArgs = vec![
+        Bytes::from(params_send_tokens.abi_encode()),
+        Bytes::from(params_swap.abi_encode()),
     ];
 
     let call_build = exchange_router.multicall(multicallArgs);
     let mut tx = call_build.into_transaction_request();
-    let _ = utils::send_transaction(tx).await?;
+    let _ = utils::send_transaction(
+        Arc::new(client.clone()),
+        owner,
+        tx, 
+        chain_id,
+    ).await?;
 
     Ok(()) 
 

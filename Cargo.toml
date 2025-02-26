@@ -19,3 +19,4 @@ serde = { version = "1.0", features = ["derive"] }
 isahc = "1.7.2"
 borsh = { version = "1.5.3", features = ["derive"] }
 dotenvy = "0.15.7"
+anyhow = "1.0"

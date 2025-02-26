@@ -1,5 +1,6 @@
 
 use std::sync::Arc;
+use anyhow::{Context, Result};
 use alloy::{
     contract::private::{
         Transport, 
@@ -14,6 +15,8 @@ use alloy_primitives::{
     Address,
     U256,
 };
+
+use alloy::sol_types::SolValue;
 
 type Bytes32 = FixedBytes<32>;
 
@@ -31,13 +34,20 @@ where
     tx.set_chain_id(chain_id);
     tx.set_from(account);
 
+    let gas_usage_result = client
+        .estimate_gas(&tx)
+        .await
+        .context("Error estimating gas usage: {}")
+        .map_err(|e| e.to_string())?;
+
     let bid_gas_price: u128 = client
         .get_gas_price()
         .await
-        .context("Error getting gas price")?
-        .as_u128(); // Assuming gas price is returned as a type that can be converted
+        .context("Error getting gas price")
+        .map_err(|e| e.to_string())?;
 
     tx.set_gas_price(bid_gas_price);
+    tx.set_gas_limit(gas_usage_result);
 
     client
         .send_transaction(tx) // Changed from `action.tx` to `tx`
