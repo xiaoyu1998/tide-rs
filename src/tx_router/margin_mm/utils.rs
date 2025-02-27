@@ -37,14 +37,16 @@ where
     let gas_usage_result = client
         .estimate_gas(&tx)
         .await
-        .context("Error estimating gas usage: {}")
-        .map_err(|e| e.to_string())?;
+        // .context("Error estimating gas usage: {}")
+        // .map_err(|e| e.to_string())?;
+        .map_err(|e| format!("Error estimating gas usage: {}", e))?;
 
     let bid_gas_price: u128 = client
         .get_gas_price()
         .await
-        .context("Error getting gas price")
-        .map_err(|e| e.to_string())?;
+        // .context("Error getting gas price")
+        // .map_err(|e| e.to_string())?;
+        .map_err(|e| format!("Error getting gas price: {}", e))?;
 
     tx.set_gas_price(bid_gas_price);
     tx.set_gas_limit(gas_usage_result);
