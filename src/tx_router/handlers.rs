@@ -117,7 +117,7 @@ async fn get_pool_handler(body: types::GetPriceRequest) -> Result<warp::reply::J
             let response = types::GetPoolResponse {
                 success: true,
                 message: "Tokens bought successfully.".to_string(),
-                pool: types::Pool{
+                pool: Some(types::Pool{
                     price: pool.price,
                     price_decimals: pool.priceDecimals,
                     base_token: pool.assets[0].token,
@@ -126,7 +126,7 @@ async fn get_pool_handler(body: types::GetPriceRequest) -> Result<warp::reply::J
                     meme_token: pool.assets[1].token,
                     meme_symbol: pool.assets[1].symbol.clone(),
                     meme_token_decimals: pool.assets[1].decimals,
-                },
+                }),
             };
             Ok(warp::reply::json(&response))
         }
@@ -135,7 +135,6 @@ async fn get_pool_handler(body: types::GetPriceRequest) -> Result<warp::reply::J
                 success: false,
                 message: err,
                 pool: None,
-                pool_decimals: None,
             };
             Ok(warp::reply::json(&response))
         }

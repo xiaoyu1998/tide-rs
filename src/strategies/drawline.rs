@@ -3,12 +3,15 @@ use tokio::time::{sleep, Duration};
 use tokio::sync::mpsc;
 use tokio::io::{self, AsyncBufReadExt};  // For reading input asynchronously
 use tokio::signal::unix::{signal, SignalKind}; // For listening to Ctrl + C
+use std::str::FromStr;
+use alloy::{
+    sol_types::private::{Address},
+};
+use alloy_primitives::{U256};
 use crate::tx_router::client_apis;
 use crate::tx_router::margin_mm::utils;
+use crate::tx_router::margin_mm::cache;
 
-use alloy_primitives::{
-    U256,
-};
 
 pub async fn execute(
     network: String,
@@ -57,29 +60,28 @@ pub async fn execute(
    //     }
    // };
 
-   let cache = cache::load_or_create_cache(network, market, token).await?;
-   let pool = cache.pools.get(token);
+   let cache = cache::load_or_create_cache(network.clone(), market.clone(), token.clone()).await?;
+   let pool = cache.pools.get(&Address::from_str(&token.clone()).unwrap()).unwrap();
    let meme_decimals_u256 = pool.meme_token_decimals;
    let base_decimals_u256 = pool.base_token_decimals;
-   let decimals_u256 = meme_decimals_u256 - base_decimals_u256;
+   let delta_decimals_u256 = meme_decimals_u256 - base_decimals_u256;
 
-   let delta_decimals_u32:u32 = decimals_u256.try_into()?;
-   let first_half_u32 = delta_decimals_u32/2;
-   let rest_half_u32 = delta_decimals_u32 - first_half_u32;  
+   let delta_decimals_u32:u32 = delta_decimals_u256.try_into().unwrap();
+   // let first_half_u32 = delta_decimals_u32/2;
+   // let rest_half_u32 = delta_decimals_u32 - first_half_u32;  
 
-   let price_decimals = decimals - utils::USDT_DECIMALS;
-   let price_ceiling_u256 = utils::adjust_price(price_ceiling, first_half_u32, rest_half_u32);
-   let price_floor_u256 = utils::adjust_price(price_floor, first_half_u32, rest_half_u32);
+   let price_ceiling_u256 = utils::adjust_by_type(price_ceiling, delta_decimals_u32);
+   let price_floor_u256 = utils::adjust_by_type(price_floor, delta_decimals_u32);
 
-   let meme_decimals_u32:u32 = meme_decimals_u256.try_into()?;
+   let meme_decimals_u32:u32 = meme_decimals_u256.try_into().unwrap();
    let tx_trade_size_max = tx_trade_size_max*10u128.pow(meme_decimals_u32);
    let tx_trade_size_min = tx_trade_size_min*10u128.pow(meme_decimals_u32);
 
     // Infinite loop to continuously trade
     loop {
         // Get the current price of the token
-        let (current_price_u256) = match client_apis::get_pool(network.clone(), market.clone(), token.clone()).await {
-            Ok(pool) => utils::adjust_price(pool.price),
+        let current_price_u256 = match client_apis::get_pool(network.clone(), market.clone(), token.clone()).await {
+            Ok(pool) => utils::adjust_price_by_decimals(pool.price, delta_decimals_u256),
             Err(e) => return Err(format!("Failed to fetch price: {}", e)),
         };
 
@@ -90,8 +92,8 @@ pub async fn execute(
             
             loop {
                 // Wait until the price returns within the acceptable range
-                 let (current_price_u256) = match client_apis::get_price(network.clone(), market.clone(), token.clone()).await {
-                     Ok(current_price_u256) => utils::adjust_price(pool.price),
+                 let current_price_u256 = match client_apis::get_price(network.clone(), market.clone(), token.clone()).await {
+                     Ok(current_price_u256) => utils::adjust_price_by_decimals(pool.price, delta_decimals_u256),
                      Err(e) => return Err(format!("Failed to fetch price: {}", e)),
                  };
 

@@ -18,7 +18,7 @@ use alloy_primitives::{
 use margin_mm::{
     reader::{
         Reader,
-        Pool,
+        ReaderPoolUtils,
     },
     exchangerouter::{
         ExchangeRouter,
@@ -240,7 +240,7 @@ pub async fn get_price(
 
 pub async fn get_pool(
     meme: String
-) -> Result<Pool.Props, String> {
+) -> Result<ReaderPoolUtils::GetPool, String> {
    let signer: PrivateKeySigner = keypair::load_signer_from_file(".env").expect("Failed to load PrivateKeySigner");
    let wallet = EthereumWallet::from(signer.clone());
    let owner = wallet.default_signer().address();
@@ -255,111 +255,8 @@ pub async fn get_pool(
    let reader = Reader::new(reader_address.clone(), client.clone());
    let pook_key = utils::hash_pool_key(base_address, meme_address);
 
-   //let pools = reader.getPoolsInfo_2(data_store_address, vec![pook_key]).call().await.unwrap();
    let pools = reader.getPools2(data_store_address, vec![pook_key]).call().await.unwrap();
    let pools = pools._0;
-   //let price = pools[0].price * U256::from(10u64.pow(pools[0].decimals as u64))/U256::from(10u64.pow(27));
-   // let price = utils::calculate_real_price(pools[0].price, pools[0].priceDecimals);
-   // let decimals:u32 = pools[0].assets[1].decimals.try_into().unwrap();
 
-
-
-   //Ok((price, decimals))
-
-   Ok(pools[0])
+   Ok(pools[0].clone())
 }
-
-// pub async fn buy(
-//     meme: String,
-//     amount: f64,
-//     price_limit: f64,
-// ) -> Result<(), String> {
-
-//    let signer: PrivateKeySigner = keypair::load_signer_from_file(".env").expect("Failed to load PrivateKeySigner");
-//    let wallet = EthereumWallet::from(signer.clone());
-//    let owner = wallet.default_signer().address();
-//    // let CHAIN_ID: u64 = 84532;
-//    //let CHAIN_ID: u64 = 31337;
-
-//    //let rpc = (BASE_SEPOLIA).parse().map_err(|e| e.to_string())?;
-//    let rpc = Url::parse(BASE_SEPOLIA).map_err(|e| e.to_string())?;
-//    let client = ProviderBuilder::new().with_cached_nonce_management().wallet(wallet.clone()).on_http(rpc);
-//    let contracts = contracts::load_contracts("deployments/contracts.json");
-//    let data_store_address = contracts::get_contract_address(&contracts, "DataStore").unwrap();
-//    let exchange_router_address = contracts::get_contract_address(&contracts, "ExchangeRouter").unwrap();
-//    let reader_address = contracts::get_contract_address(&contracts, "Reader").unwrap();
-//    let router_address = contracts::get_contract_address(&contracts, "Router").unwrap();
-//    let base_address = contracts::get_contract_address(&contracts, "USDT").unwrap();
-
-//    dbg!(owner, data_store_address, exchange_router_address, reader_address, base_address);
-
-//    let meme_address = Address::from_str(meme.as_str()).unwrap();
-//    let reader = Reader::new(reader_address.clone(), client.clone());
-//    let pook_key = utils::hash_pool_key(base_address, meme_address);
-
-//    dbg!(meme_address, pook_key);
-
-//    let pools = reader.getPools2(data_store_address,  vec![pook_key]).call().await.unwrap();
-//    let pools = pools._0;
-
-//    //let base_decimals = pools[0].assets[1].decimals;
-//    //let base_decimals = U256::from(6);//usdt
-//    let amount0_in = U256::from((amount * 1000000 as f64) as u64);
-//    let amount1_out = if U256::from(price_limit as u64) == U256::ZERO {
-//         U256::ZERO
-//    } else {
-//         U256::from((amount / price_limit) as u64)
-//    };
-
-
-//    println!("aporove usdt {}", amount);
-//    let usdt = ERC20::new(base_address, client.clone());
-//    //usdt.approve(router_address, amount0_in).await.unwrap;
-//    let call_build_approve = usdt.approve(router_address, amount0_in);
-//     let mut tx_approve = call_build_approve.into_transaction_request();
-//     let _ = utils::send_transaction(
-//         Arc::new(client.clone()),
-//         owner,
-//         tx_approve, 
-//         CHAIN_ID,
-//     ).await?;  
-
-//    println!("swap exchange_router {} {}", exchange_router_address, amount0_in);
-//    let exchange_router = ExchangeRouter::new(exchange_router_address, Arc::new(client.clone()));
-//    let params_send_tokens = ExchangeRouter::sendTokensCall {
-//         token: base_address,
-//         receiver: pools[0].bank,
-//         amount: amount0_in,
-//     };
-
-//    let params_swap = SwapUtils::SwapParams{
-//         token0: base_address,
-//         token1: meme_address,
-//         amount0In: amount0_in,
-//         amount1In: U256::ZERO,
-//         amount0Out: U256::ZERO,
-//         amount1Out: amount1_out,
-//         to: owner,
-//     };
-
-//     let params_execute_swap = ExchangeRouter::executeSwapCall{
-//         params:params_swap,
-//     };
-
-//     let multicall_args = vec![
-//         Bytes::from(params_send_tokens.abi_encode()),
-//         Bytes::from(params_execute_swap.abi_encode()),
-//     ];
-
-//     let call_build = exchange_router.multicall(multicall_args);
-//     let mut tx = call_build.into_transaction_request();
-//     let _ = utils::send_transaction(
-//         Arc::new(client.clone()),
-//         owner,
-//         tx, 
-//         CHAIN_ID,
-//     ).await?;
-
-//     Ok(()) 
-
-// }

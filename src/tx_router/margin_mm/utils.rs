@@ -230,10 +230,16 @@ pub fn calculate_real_price(price: U256, price_decimals: U256) -> f64 {
     real_price + fractional_part
 }
 
-pub fn adjust_price(price: f64, first_half: u32, rest_half:u32) -> U256{
-    U256::from(price * (10u64.pow(first_half)) as f64) * U256::from(10u64.pow(rest_half)
+pub fn adjust_by_type(value: f64, decimal: u32) -> U256{
+    let first_half = decimal / 2;
+    let rest_half = decimal - first_half;
+    U256::from(value * (10u64.pow(first_half)) as f64) * U256::from(10u64.pow(rest_half))
 }
 
-pub fn adjust_price(price: U256, decimal_delta: U256) -> U256{
+// pub fn adjust_price_by_type(price: f64, first_half: u32, rest_half:u32) -> U256{
+//     U256::from(price * (10u64.pow(first_half)) as f64) * U256::from(10u64.pow(rest_half))
+// }
+
+pub fn adjust_price_by_decimals(price: U256, decimal_delta: U256) -> U256{
     price*U256::from(10).pow(decimal_delta)/U256::from(10).pow(U256::from(PRICE_DECIMALS))
 }

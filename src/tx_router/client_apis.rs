@@ -154,7 +154,7 @@ pub async fn get_pool(
     network: String,
     market: String,
     token: String,
-) -> Result<Pool, String> {
+) -> Result<types::Pool, String> {
 
     // Define the URL of the API endpoint
     let url = format!("{}{}", TX_ROUTER_URL, "/get_pool");
@@ -185,8 +185,8 @@ pub async fn get_pool(
                     .map_err(|e| format!("Error deserializing response: {}", e))?;
 
                 if response_body.success {
-                    match (response_body.pool) {
-                        (Some(pool)) => Ok(pool),  // Return both values
+                    match response_body.pool {
+                        Some(pool) => Ok(pool),  // Return both values
                         _ => Err("Pool not available.".to_string()),  // Handle missing data
                     }
                 } else {

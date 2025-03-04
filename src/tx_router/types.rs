@@ -1,8 +1,5 @@
 use serde::{Serialize, Deserialize};
-use alloy_primitives::{
-    U256,
-};
-
+use std::collections::{HashMap};
 use alloy_primitives::{
     FixedBytes,
     Address,
@@ -43,23 +40,16 @@ pub struct Response {
 }
 
 
-// #[derive(Clone, Debug, Serialize, Deserialize)]
-// pub struct Token {
-//     address: Address,
-//     symbol: U256,
-//     decimals: U256,
-// }
-
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Pool {
-    price: U256,
-    price_decimals: U256,
-    base_token: Address,
-    base_symbol: String,
-    base_token_decimals: U256,
-    meme_token: Address,
-    meme_symbol: String,
-    meme_token_decimals: U256,
+    pub price: U256,
+    pub price_decimals: U256,
+    pub base_token: Address,
+    pub base_symbol: String,
+    pub base_token_decimals: U256,
+    pub meme_token: Address,
+    pub meme_symbol: String,
+    pub meme_token_decimals: U256,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -78,6 +68,6 @@ pub struct GetPoolResponse {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StateCache {
-    pools: HashMap<Address, Pool>,
+    pub pools: HashMap<Address, Pool>,
 }
 

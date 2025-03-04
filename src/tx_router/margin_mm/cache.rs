@@ -4,6 +4,7 @@ use std::fs::File;
 use std::io::{self, Write};
 use std::path::Path;
 use crate::tx_router::types;
+use crate::tx_router::client_apis;
 
 const STATE_CACHE_FILE: &str = "state_cache.json";
 // load borrower state cache from file if exists
@@ -22,11 +23,11 @@ fn load_cache() -> Result<types::StateCache, String> {
 }
 
 // Save state cache to file
-fn save_cache(cache: &types::StateCache) -> Result<()> {
+fn save_cache(cache: &types::StateCache) -> Result<(), String> {
     let file = File::create(STATE_CACHE_FILE)
-        .with_context(|| format!("Failed to create cache file: {}", STATE_CACHE_FILE))?;
+        .map_err(|e| format!("Failed to create cache file: {}", e))?;
     serde_json::to_writer_pretty(file, &cache)
-        .with_context(|| "Failed to write state cache to file")?;
+        .map_err(|e| format!("Failed to write state cache to file: {}", e))?;
 
     Ok(())
 }
@@ -45,8 +46,8 @@ pub async fn load_or_create_cache(
         Err(e) => {
             println!("Failed to load cache: {}", e);
             println!("Creating a new empty cache...");
-            let cache = types::StateCache {
-                tokens: HashMap::new(),
+            let mut cache = types::StateCache {
+                pools: HashMap::new(),
             };
 
             match client_apis::get_pool(
@@ -55,13 +56,13 @@ pub async fn load_or_create_cache(
                 token
             ).await {
                 Ok(pool) => {
-                    cache.tokens.insert(
+                    cache.pools.insert(
                         pool.meme_token,
-                        Pool
+                        pool
                     );  
                 },
                 Err(e) => {
-                    Err(format!("Failed to get_pool: {}", e))
+                    return Err(format!("Failed to get_pool: {}", e));
                 }
             }
 
