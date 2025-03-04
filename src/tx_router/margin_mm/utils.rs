@@ -2,23 +2,52 @@
 use std::sync::Arc;
 use anyhow::{Context, Result};
 use alloy::{
-    contract::private::{
-        Transport, 
-        Provider, 
-        Network
+    transports::Transport, 
+    providers::{
+        Provider,
+    }, 
+    network::{
+        TransactionBuilder,
+        Network,
+        //ReceiptResponse, 
+        Ethereum
     },
-    network::TransactionBuilder,
 };
 use alloy_primitives::{
+    Log,
+    LogData,
     FixedBytes,
     Keccak256,
     Address,
     U256,
 };
 
-use alloy::sol_types::SolValue;
+use alloy::rpc::types::{
+    TransactionReceipt,
+    // Log,
+};
+
+use alloy::consensus::{
+    ReceiptWithBloom,
+    ReceiptEnvelope,
+    Receipt,
+    // TxReceipt
+};
+
+use alloy::sol_types::{
+    SolValue,
+    SolEvent,
+};
+
+use margin_mm::{
+    eventemitter::{
+        EventEmitter::Swap,
+    },
+};
 
 type Bytes32 = FixedBytes<32>;
+pub const PRICE_DECIMALS: u32 = 27;
+pub const USDT_DECIMALS: u32 = 6;
 
 pub async fn send_transaction<T, P, N>(
     client: Arc<P>,
@@ -51,7 +80,7 @@ where
     tx.set_gas_price(bid_gas_price);
     tx.set_gas_limit(gas_usage_result);
 
-    client
+    let receipt = client
         .send_transaction(tx) // Changed from `action.tx` to `tx`
         .await
         .map_err(|e| format!("Error sending transaction: {}", e))?
@@ -59,7 +88,57 @@ where
         .await
         .map_err(|e| format!("Error getting receipt: {}", e))?;
 
+    // // Force cast (unsafe if not sure of the type)
+    // let tx_receipt: &TransactionReceipt<ReceiptEnvelope<Log>> = unsafe {
+    //     &*(&receipt as *const _ as *const TransactionReceipt<ReceiptEnvelope<Log>>)
+    // };
+
+    // dbg!(tx_receipt);
+    // let receipt: &TransactionReceipt<ReceiptEnvelope<Log>> = &receipt;
+    // let logs = get_logs(receipt);
+    // //dbg!(logs);
+    // println!("Receipt type: {}", std::any::type_name_of_val(&receipt));
+    // // let swap_log = Swap::decode_log(&logs[2], false).unwrap();
+    // // println!("swap_log account: {}", swap_log.account);
+    // // println!("swap_log amountIn: {}", swap_log.amountIn);
+    // // println!("swap_log amountOut: {}", swap_log.amountOut);
+    // if let Some(tx_receipt) = receipt.as_ref() {
+    //     let logs = get_logs(tx_receipt);
+    // } else {
+    //     eprintln!("Receipt is None");
+    // }
+
+
     Ok(())
+}
+
+pub fn get_logs(receipt: &TransactionReceipt<ReceiptEnvelope<Log>>) -> Vec<Log> {
+    // Match the ReceiptEnvelope variant to access the logs
+    match &receipt.inner {
+        ReceiptEnvelope::Legacy(ref receipt_with_bloom) 
+        | ReceiptEnvelope::Eip2930(ref receipt_with_bloom)
+        | ReceiptEnvelope::Eip1559(ref receipt_with_bloom)
+        | ReceiptEnvelope::Eip4844(ref receipt_with_bloom)
+        | ReceiptEnvelope::Eip7702(ref receipt_with_bloom) => {
+
+            println!("xiaoyu1998 {}", receipt_with_bloom.receipt.logs[0].address);
+            println!("xiaoyu1998 {}", receipt_with_bloom.receipt.logs[0].data.data);
+            // Return the logs from the Receipt
+            //let logs = receipt_with_bloom.receipt.logs.clone();
+            // println!("xiaoyu1998 {}", receipt_with_bloom.receipt.logs[0].address);
+
+            // logs
+            receipt_with_bloom.receipt.logs.clone()
+
+
+        },
+        // Handle any unknown or future variants with a wildcard
+        _ => {
+            // You can return an empty Vec<Log> or handle it differently if needed
+            eprintln!("Unexpected ReceiptEnvelope variant");
+            Vec::new() // Returning an empty vector in case of unexpected variant
+        }
+    }
 }
 
 pub fn hash_data(data: Vec<Vec<u8>>) -> Vec<u8> {
@@ -123,4 +202,51 @@ fn hash_position_key(account: Address, position_id: U256) -> Bytes32 {
     // Convert the result to Bytes32
     FixedBytes::try_from(hash_result.as_slice()).expect("Hash should be 32 bytes")
 
+}
+
+// pub fn calculate_real_price(price: U256, ) -> f64 {
+//     // Calculate the scaling factor (10^decimals)
+//     let scale_factor =  U256::from(10).pow(U256::from(27));
+//     let scale_factor_f64 :f64 =  scale_factor.try_into().unwrap();
+
+//     // Divide the price by the scaling factor to get the integer part
+//     let integer_part = price / scale_factor;
+
+//     // Get the remainder (fractional part)
+//     let remainder = price % scale_factor;
+//     let remainder_f64 :f64 = remainder.try_into().unwrap();
+
+//     // Convert integer part to f64
+//     let real_price :f64 = integer_part.try_into().unwrap();
+
+//     // Convert remainder to a fraction and add it to the integer part
+//     let fractional_part :f64 = remainder_f64 / scale_factor_f64;
+
+//     real_price + fractional_part
+// }
+
+pub fn calculate_real_price(price: U256, price_decimals: U256) -> f64 {
+
+    if price_decimals != U256::from(27) {
+        return 0.0
+    }
+
+    // Calculate the scaling factor (10^decimals)
+    let scale_factor =  U256::from(10).pow(price_decimals);
+    let scale_factor_f64 :f64 =  scale_factor.try_into().unwrap();
+
+    // Divide the price by the scaling factor to get the integer part
+    let integer_part = price / scale_factor;
+
+    // Get the remainder (fractional part)
+    let remainder = price % scale_factor;
+    let remainder_f64 :f64 = remainder.try_into().unwrap();
+
+    // Convert integer part to f64
+    let real_price :f64 = integer_part.try_into().unwrap();
+
+    // Convert remainder to a fraction and add it to the integer part
+    let fractional_part :f64 = remainder_f64 / scale_factor_f64;
+
+    real_price + fractional_part
 }

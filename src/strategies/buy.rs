@@ -1,5 +1,7 @@
 use crate::tx_router::client_apis;
-
+use alloy_primitives::{
+    U256,
+};
 pub async fn execute(
     network: String,
     market: String,
@@ -12,8 +14,8 @@ pub async fn execute(
        network,
        market,
        token,
-       amount,
-       price_limit,
+       U256::from(amount)*U256::from(10u64.pow(6)),
+       U256::from(price_limit * (10u64.pow(12/2)) as f64) * U256::from(10u64.pow((12+1)/2)),
    ).await {
         Ok(_) => Ok(()), // If successful, return Ok
         Err(e) => {

@@ -24,40 +24,40 @@ enum Commands {
     
     /// Drawline
     Drawline{
-        #[arg(short, long, default_value_t = String::from("base"))]
+        #[arg(long, default_value_t = String::from("base"))]
         network: String,   
 
-        #[arg(short, long, default_value_t = String::from("marginmm"))]
+        #[arg(long, default_value_t = String::from("marginmm"))]
         market: String, 
 
-        #[arg(short, long)]
+        #[arg(long)]
         token: String,   
 
-        #[arg(short, long)]
+        #[arg(long)]
         price_ceiling: f64,  
 
-        #[arg(short, long)]
+        #[arg(long)]
         price_floor: f64,  
 
-        #[arg(short, long)]
-        tx_trade_size_Max: u64,  
+        #[arg(long)]
+        tx_trade_size_max: u128,  
 
-        #[arg(short, long)]
-        tx_trade_size_Min: u64,   
+        #[arg(long)]
+        tx_trade_size_min: u128,   
 
-        #[arg(short, long)]
+        #[arg(long)]
         trading_frequency: u64,    
 
-        #[arg(short, long)]
+        #[arg(long)]
         gas: u64,     
 
-        #[arg(short, long)]
+        #[arg(long)]
         task_mode: u64, 
  
-        #[arg(short, long)]
+        #[arg(long)]
         trend: u64,    
 
-        #[arg(short, long)]
+        #[arg(long)]
         wallets: u64,              
     },
     /// Buy
@@ -135,8 +135,8 @@ async fn main() -> tokio::io::Result<()> {
             token, 
             price_ceiling, 
             price_floor,
-            tx_trade_size_Max,
-            tx_trade_size_Min,
+            tx_trade_size_max,
+            tx_trade_size_min,
             trading_frequency,
             gas,
             task_mode,
@@ -149,8 +149,8 @@ async fn main() -> tokio::io::Result<()> {
                 token.clone(),
                 *price_ceiling,
                 *price_floor,
-                *tx_trade_size_Max,
-                *tx_trade_size_Min,
+                *tx_trade_size_max,
+                *tx_trade_size_min,
                 *trading_frequency,
                 *gas,
                 *task_mode,
