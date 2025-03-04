@@ -180,7 +180,7 @@ pub async fn get_pool(
         Ok(res) => {
             if res.status().is_success() {
                 // Deserialize response body into the correct struct
-                let response_body: types::Response = res.json()
+                let response_body: types::GetPoolResponse = res.json()
                     .await
                     .map_err(|e| format!("Error deserializing response: {}", e))?;
 

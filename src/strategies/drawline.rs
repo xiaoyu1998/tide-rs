@@ -49,44 +49,53 @@ pub async fn execute(
     //         }
     //     }
     // });
-   let (price, decimals) = match client_apis::get_price(network.clone(), market.clone(), token.clone()).await {
-       Ok((price, decimals)) => (price, decimals),
-       Err(e) => {
-           println!("Failed to fetch price: {}", e);
-           return Err(format!("Failed to fetch price: {}", e));
-       }
-   };
+   // let (price, decimals) = match client_apis::get_price(network.clone(), market.clone(), token.clone()).await {
+   //     Ok((price, decimals)) => (price, decimals),
+   //     Err(e) => {
+   //         println!("Failed to fetch price: {}", e);
+   //         return Err(format!("Failed to fetch price: {}", e));
+   //     }
+   // };
 
+   let cache = cache::load_or_create_cache(network, market, token).await?;
+   let pool = cache.pools.get(token);
+   let meme_decimals_u256 = pool.meme_token_decimals;
+   let base_decimals_u256 = pool.base_token_decimals;
+   let decimals_u256 = meme_decimals_u256 - base_decimals_u256;
+
+   let delta_decimals_u32:u32 = decimals_u256.try_into()?;
+   let first_half_u32 = delta_decimals_u32/2;
+   let rest_half_u32 = delta_decimals_u32 - first_half_u32;  
 
    let price_decimals = decimals - utils::USDT_DECIMALS;
-   let price_ceiling_u256 = U256::from(price_ceiling * (10u64.pow(price_decimals/2)) as f64) * U256::from(10u64.pow((price_decimals+1)/2));
-   let price_floor_u256 = U256::from(price_floor * (10u64.pow(price_decimals/2)) as f64) * U256::from(10u64.pow((price_decimals+1)/2));
+   let price_ceiling_u256 = utils::adjust_price(price_ceiling, first_half_u32, rest_half_u32);
+   let price_floor_u256 = utils::adjust_price(price_floor, first_half_u32, rest_half_u32);
 
-   let tx_trade_size_max = tx_trade_size_max*10u128.pow(decimals);
-   let tx_trade_size_min = tx_trade_size_min*10u128.pow(decimals);
+   let meme_decimals_u32:u32 = meme_decimals_u256.try_into()?;
+   let tx_trade_size_max = tx_trade_size_max*10u128.pow(meme_decimals_u32);
+   let tx_trade_size_min = tx_trade_size_min*10u128.pow(meme_decimals_u32);
 
     // Infinite loop to continuously trade
     loop {
         // Get the current price of the token
-        let (current_price, price_decimals) = match client_apis::get_price(network.clone(), market.clone(), token.clone()).await {
-            Ok((current_price, price_decimals)) => (current_price, price_decimals),
+        let (current_price_u256) = match client_apis::get_pool(network.clone(), market.clone(), token.clone()).await {
+            Ok(pool) => utils::adjust_price(pool.price),
             Err(e) => return Err(format!("Failed to fetch price: {}", e)),
         };
-        //println!("Current price {} ", current_price);
 
         // Check if the current price is outside the allowed range
-        if current_price > price_ceiling || current_price < price_floor {
-            // Pause trading if the price is above the price_ceiling or below the price_floor
-            println!("Current price {} is out of range. Pausing trading.", current_price);
+        if current_price_u256 > price_ceiling_u256 || current_price_u256 < price_floor_u256 {
+            // Pause trading if the price is above the price_ceiling_u256 or below the price_floor_u256
+            println!("Current price {} is out of range. Pausing trading.", current_price_u256);
             
             loop {
                 // Wait until the price returns within the acceptable range
-                 let (current_price, price_decimals) = match client_apis::get_price(network.clone(), market.clone(), token.clone()).await {
-                     Ok((current_price, price_decimals)) => (current_price, price_decimals),
+                 let (current_price_u256) = match client_apis::get_price(network.clone(), market.clone(), token.clone()).await {
+                     Ok(current_price_u256) => utils::adjust_price(pool.price),
                      Err(e) => return Err(format!("Failed to fetch price: {}", e)),
                  };
 
-                if current_price <= price_ceiling && current_price >= price_floor {
+                if current_price_u256 <= price_ceiling_u256 && current_price_u256 >= price_floor_u256 {
                     println!("Price is within range. Resuming trading.");
                     break;
                 }
@@ -97,25 +106,26 @@ pub async fn execute(
         }
 
         // Randomize the trade size for both buy and sell (in tokens) between min and max
-        let sell_size_tokens = rng.gen_range(tx_trade_size_min..=tx_trade_size_max);
-        let trade_size_tokens = sell_size_tokens/10u128.pow(decimals);
+        let sell_size_tokens_u128 = rng.gen_range(tx_trade_size_min..=tx_trade_size_max);
+        let trade_size_tokens_u128 = sell_size_tokens_u128/10u128.pow(meme_decimals_u32);
+        let sell_size_tokens_u256 = U256::from(sell_size_tokens_u128);
 
         // Randomly decide whether to buy or sell based on the price and trend
         let price_action = rng.gen_bool(0.5); // 50% chance to buy or sell (adjust as needed)
 
         if price_action {
             //let money_required_for_buy = current_price * trade_size_tokens as f64; // Money needed to buy the tokens
-            let money_required_for_buy = U256::from(current_price * 10u64.pow(utils::USDT_DECIMALS) as f64 ) * U256::from(trade_size_tokens) ; // Money needed to buy the tokens
+            let money_required_for_buy_u256 = current_price_u256  *  sell_size_tokens_u256; 
 
             // Execute buy
             match client_apis::buy(
                 network.clone(),
                 market.clone(),
                 token.clone(),
-                money_required_for_buy, // Using the calculated money amount for buy
+                money_required_for_buy_u256, // Using the calculated money amount for buy
                 price_ceiling_u256,
             ).await {
-                Ok(_) => println!("Buy trade executed: {} tokens for {} money at price {}", trade_size_tokens, money_required_for_buy, current_price),
+                Ok(_) => println!("Buy trade executed: {} tokens for {} money at price {}", trade_size_tokens_u128, money_required_for_buy_u256, current_price_u256),
                 Err(e) => return Err(format!("Buy trade failed: {}", e)),
             }
         } else {
@@ -125,11 +135,11 @@ pub async fn execute(
                 network.clone(),
                 market.clone(),
                 token.clone(),
-                U256::from(sell_size_tokens), // Selling the token amount
-                // price_floor_u256,
-                U256::ZERO,
+                sell_size_tokens_u256, // Selling the token amount
+                price_floor_u256,
+                //U256::ZERO,
             ).await {
-                Ok(_) => println!("Sell trade executed: {} tokens at price {}", trade_size_tokens, current_price),
+                Ok(_) => println!("Sell trade executed: {} tokens at price {}", trade_size_tokens_u128, current_price_u256),
                 Err(e) => return Err(format!("Sell trade failed: {}", e)),
             }
         }

@@ -47,7 +47,7 @@ use margin_mm::{
 
 type Bytes32 = FixedBytes<32>;
 pub const PRICE_DECIMALS: u32 = 27;
-pub const USDT_DECIMALS: u32 = 6;
+
 
 pub async fn send_transaction<T, P, N>(
     client: Arc<P>,
@@ -204,27 +204,6 @@ fn hash_position_key(account: Address, position_id: U256) -> Bytes32 {
 
 }
 
-// pub fn calculate_real_price(price: U256, ) -> f64 {
-//     // Calculate the scaling factor (10^decimals)
-//     let scale_factor =  U256::from(10).pow(U256::from(27));
-//     let scale_factor_f64 :f64 =  scale_factor.try_into().unwrap();
-
-//     // Divide the price by the scaling factor to get the integer part
-//     let integer_part = price / scale_factor;
-
-//     // Get the remainder (fractional part)
-//     let remainder = price % scale_factor;
-//     let remainder_f64 :f64 = remainder.try_into().unwrap();
-
-//     // Convert integer part to f64
-//     let real_price :f64 = integer_part.try_into().unwrap();
-
-//     // Convert remainder to a fraction and add it to the integer part
-//     let fractional_part :f64 = remainder_f64 / scale_factor_f64;
-
-//     real_price + fractional_part
-// }
-
 pub fn calculate_real_price(price: U256, price_decimals: U256) -> f64 {
 
     if price_decimals != U256::from(27) {
@@ -249,4 +228,12 @@ pub fn calculate_real_price(price: U256, price_decimals: U256) -> f64 {
     let fractional_part :f64 = remainder_f64 / scale_factor_f64;
 
     real_price + fractional_part
+}
+
+pub fn adjust_price(price: f64, first_half: u32, rest_half:u32) -> U256{
+    U256::from(price * (10u64.pow(first_half)) as f64) * U256::from(10u64.pow(rest_half)
+}
+
+pub fn adjust_price(price: U256, decimal_delta: U256) -> U256{
+    price*U256::from(10).pow(decimal_delta)/U256::from(10).pow(U256::from(PRICE_DECIMALS))
 }
