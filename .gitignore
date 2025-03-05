@@ -4,3 +4,4 @@ accounts.txt
 .DS_Store
 ._.DS_Store
 .env
+.state_cache.jso 
