@@ -37,39 +37,6 @@ use crate::utils::keypair;
 // pub const CHAIN_ID: u64 = 84532;
 pub const BASE_SEPOLIA : &str = "http://127.0.0.1:8545";
 pub const CHAIN_ID: u64 = 31337;
-// pub const USDT_DECIMALS: u32 = 6;
-
-// pub async fn buy(
-//     meme: String,
-//     amount: f64,
-//     price_limit: f64,
-// ) -> Result<(), String> {
-//    let power = 10u64.pow(USDT_DECIMALS);
-//    let amount0_in = U256::from((amount * power as f64) as f64);
-//    let amount1_out = if U256::from(price_limit as u64) == U256::ZERO {
-//         U256::ZERO
-//    } else {
-//         U256::from((amount / price_limit) as u64)
-//    };
-
-//    return swap(meme, amount0_in, U256::ZERO, U256::ZERO, amount1_out).await;
-// }
-
-// pub async fn sell(
-//     meme: String,
-//     amount: f64,
-//     price_limit: f64,
-// ) -> Result<(), String> {
-
-//     let amount1_in = U256::from(amount as u64);
-//     let amount0_out = if U256::from(price_limit as u64) == U256::ZERO {
-//         U256::ZERO
-//     } else {
-//         U256::from((amount * price_limit) as u64)
-//     }; 
-
-//     return swap(meme, U256::ZERO, amount1_in, amount0_out, U256::ZERO).await;
-// }
 
 pub async fn buy(
     meme: String,
@@ -80,8 +47,10 @@ pub async fn buy(
    let amount1_out = if price_limit == U256::ZERO {
         U256::ZERO
    } else {
-        amount / price_limit
+        utils::mul_pow(amount, U256::from(utils::PRICE_DECIMALS))  / price_limit
    };
+
+   dbg!(amount0_in, amount1_out);
 
    return swap(meme, amount0_in, U256::ZERO, U256::ZERO, amount1_out).await;
 }
@@ -96,8 +65,10 @@ pub async fn sell(
     let amount0_out = if price_limit == U256::ZERO {
         U256::ZERO
     } else {
-        amount * price_limit
+        utils::div_pow(amount * price_limit, U256::from(utils::PRICE_DECIMALS))
     }; 
+
+    dbg!(amount1_in, amount0_out);
 
     return swap(meme, U256::ZERO, amount1_in, amount0_out, U256::ZERO).await;
 }
@@ -113,8 +84,6 @@ pub async fn swap(
    let signer: PrivateKeySigner = keypair::load_signer_from_file(".env").expect("Failed to load PrivateKeySigner");
    let wallet = EthereumWallet::from(signer.clone());
    let owner = wallet.default_signer().address();
-   //let CHAIN_ID: u64 = 84532;
-   //let CHAIN_ID: u64 = 31337;
 
    //let rpc = (BASE_SEPOLIA).parse().map_err(|e| e.to_string())?;
    let rpc = Url::parse(BASE_SEPOLIA).map_err(|e| e.to_string())?;

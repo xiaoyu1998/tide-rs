@@ -26,16 +26,12 @@ pub async fn execute(
    let delta_decimals_u32 :u32 = delta_decimals.try_into().unwrap();
    let base_decimals_u32:u32 = base_decimals.try_into().unwrap();
 
-   dbg!(base_decimals_u32, delta_decimals_u32);
-
    match client_apis::buy(
        network,
        market,
        token,
-       // U256::from(amount)*U256::from(10u64.pow(6)),
-       // U256::from(price_limit * (10u64.pow(12/2)) as f64) * U256::from(10u64.pow((12+1)/2)),
-       utils::adjust_by_type(amount, base_decimals_u32),
-       utils::adjust_by_type(price_limit, delta_decimals_u32)
+       utils::mul_pow_2_half(amount, base_decimals_u32),
+       utils::div_pow(utils::mul_pow_2_half(price_limit, utils::PRICE_DECIMALS), delta_decimals)
    ).await {
         Ok(_) => Ok(()), // If successful, return Ok
         Err(e) => {

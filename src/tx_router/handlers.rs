@@ -104,7 +104,7 @@ async fn get_price_handler(body: types::GetPriceRequest) -> Result<warp::reply::
 }
 
 // Get Price handler function
-async fn get_pool_handler(body: types::GetPriceRequest) -> Result<warp::reply::Json, Infallible> {
+async fn get_pool_handler(body: types::GetPoolRequest) -> Result<warp::reply::Json, Infallible> {
     println!("get_pool_handler: {:?}", body);
     let result = if body.network == "base" && body.market == "marginmm" {
         margin_mm_apis::get_pool(body.token).await

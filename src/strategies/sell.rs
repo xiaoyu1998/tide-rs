@@ -26,17 +26,14 @@ pub async fn execute(
    let base_decimals = pool.base_token_decimals;
    let delta_decimals = meme_decimals - base_decimals;
    let delta_decimals_u32 :u32 = delta_decimals.try_into().unwrap();
-   // let first_half_32 = delta_decimals_u32/2;
-   // let rest_half_32 = delta_decimals_u32 - first_half_u32;
    let meme_decimals_u32:u32 = meme_decimals.try_into().unwrap();
 
    match client_apis::sell(
        network,
        market,
        token,
-       //U256::from(amount)*U256::from(10).pow(meme_decimals)
-       utils::adjust_by_type(amount, meme_decimals_u32),
-       utils::adjust_by_type(price_limit, delta_decimals_u32)
+       utils::mul_pow_2_half(amount, meme_decimals_u32),
+       utils::div_pow(utils::mul_pow_2_half(price_limit, utils::PRICE_DECIMALS), delta_decimals)
    ).await {
         Ok(_) => Ok(()), // If successful, return Ok
         Err(e) => {

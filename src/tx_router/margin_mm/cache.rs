@@ -18,7 +18,7 @@ fn load_cache() -> Result<types::StateCache, String> {
     let cache: types::StateCache = serde_json::from_reader(file)
         .map_err(|e| format!("Failed to deserialize state cache: {}", e))?;
 
-    println!("Read state cache from file");
+    //println!("Read state cache from file");
     Ok(cache)
 }
 
@@ -40,7 +40,7 @@ pub async fn load_or_create_cache(
 
     let cache = match load_cache() {
         Ok(cache) => {
-            println!("Successfully loaded cache: {:?}", cache);
+            //println!("Successfully loaded cache: {:?}", cache);
             cache
         }
         Err(e) => {
