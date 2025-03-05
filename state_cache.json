@@ -1,0 +1,14 @@
+{
+  "pools": {
+    "0x4826533b4897376654bb4d4ad88b7fafd0c98528": {
+      "price": "0x2b50a3273c523da47dc1f8c0",
+      "price_decimals": "0x1b",
+      "base_token": "0x70e0ba845a1a0f2da3359c97e0285013525ffc49",
+      "base_symbol": "USDT",
+      "base_token_decimals": "0x6",
+      "meme_token": "0x4826533b4897376654bb4d4ad88b7fafd0c98528",
+      "meme_symbol": "UNI",
+      "meme_token_decimals": "0x12"
+    }
+  }
+}

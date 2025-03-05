@@ -33,10 +33,10 @@ use crate::tx_router::margin_mm::utils;
 use crate::utils::keypair;
 
 //pub const BASE_SEPOLIA : &str = "https://base-sepolia.g.alchemy.com/v2/78EX3W8zQaMXPMs1RPt3nhTDefmKkuEB";
-pub const BASE_SEPOLIA : &str = "https://base-sepolia.g.alchemy.com/v2/vhyhey20q3EcxB1ZQZIJpAcNFJC4jj7M";
-pub const CHAIN_ID: u64 = 84532;
-// pub const BASE_SEPOLIA : &str = "http://127.0.0.1:8545";
-// pub const CHAIN_ID: u64 = 31337;
+// pub const BASE_SEPOLIA : &str = "https://base-sepolia.g.alchemy.com/v2/vhyhey20q3EcxB1ZQZIJpAcNFJC4jj7M";
+// pub const CHAIN_ID: u64 = 84532;
+pub const BASE_SEPOLIA : &str = "http://127.0.0.1:8545";
+pub const CHAIN_ID: u64 = 31337;
 // pub const USDT_DECIMALS: u32 = 6;
 
 // pub async fn buy(
