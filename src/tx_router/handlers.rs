@@ -72,37 +72,6 @@ async fn sell_handler(body: types::SellRequest) -> Result<warp::reply::Json, Inf
     }
 }
 
-// // Get Price handler function
-// async fn get_price_handler(body: types::GetPriceRequest) -> Result<warp::reply::Json, Infallible> {
-//     println!("get_price_handler: {:?}", body);
-//     let result = if body.network == "base" && body.market == "marginmm" {
-//         margin_mm_apis::get_price(body.token).await
-//     } else {
-//         Err("Network and market mismatch".to_string())
-//     };
-
-//     match result {
-//         Ok((price, price_decimals)) => {
-//             let response = types::Response {
-//                 success: true,
-//                 message: "Tokens bought successfully.".to_string(),
-//                 price: Some(price),
-//                 price_decimals: Some(price_decimals),
-//             };
-//             Ok(warp::reply::json(&response))
-//         }
-//         Err(err) => {
-//             let response = types::Response {
-//                 success: false,
-//                 message: err,
-//                 price: None,
-//                 price_decimals: None,
-//             };
-//             Ok(warp::reply::json(&response))
-//         }
-//     }
-// }
-
 // Get Price handler function
 async fn get_pool_handler(body: types::GetPoolRequest) -> Result<warp::reply::Json, Infallible> {
     println!("get_pool_handler: {:?}", body);
@@ -152,11 +121,6 @@ pub async fn start() {
         .and(warp::post())
         .and(warp::body::json())
         .and_then(sell_handler);
-
-    // let get_price_route = warp::path("get_price")
-    //     .and(warp::post())
-    //     .and(warp::body::json())
-    //     .and_then(get_price_handler);
 
     let get_price_route = warp::path("get_pool")
         .and(warp::post())

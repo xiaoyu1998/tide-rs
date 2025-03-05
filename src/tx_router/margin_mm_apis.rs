@@ -181,32 +181,6 @@ pub async fn swap(
 
 }
 
-// pub async fn get_price(
-//     meme: String
-// ) -> Result<(f64,u32), String> {
-//    let signer: PrivateKeySigner = keypair::load_signer_from_file(".env").expect("Failed to load PrivateKeySigner");
-//    let wallet = EthereumWallet::from(signer.clone());
-//    let owner = wallet.default_signer().address();
-//    let rpc = Url::parse(BASE_SEPOLIA).map_err(|e| e.to_string())?;
-//    let client = ProviderBuilder::new().with_cached_nonce_management().wallet(wallet.clone()).on_http(rpc);
-//    let contracts = contracts::load_contracts("deployments/contracts.json");
-
-//    let data_store_address = contracts::get_contract_address(&contracts, "DataStore").unwrap();
-//    let reader_address = contracts::get_contract_address(&contracts, "Reader").unwrap();
-//    let base_address = contracts::get_contract_address(&contracts, "USDT").unwrap();
-//    let meme_address = Address::from_str(meme.as_str()).unwrap();
-//    let reader = Reader::new(reader_address.clone(), client.clone());
-//    let pook_key = utils::hash_pool_key(base_address, meme_address);
-
-//    let pools = reader.getPoolsInfo_2(data_store_address, vec![pook_key]).call().await.unwrap();
-//    let pools = pools._0;
-//    //let price = pools[0].price * U256::from(10u64.pow(pools[0].decimals as u64))/U256::from(10u64.pow(27));
-//    let price = utils::calculate_real_price(pools[0].price, pools[0].priceDecimals);
-//    let decimals:u32 = pools[0].assets[1].decimals.try_into().unwrap();
-
-//    Ok((price, decimals))
-// }
-
 pub async fn get_pool(
     meme: String
 ) -> Result<ReaderPoolUtils::GetPool, String> {
