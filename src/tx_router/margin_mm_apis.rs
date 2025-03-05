@@ -6,8 +6,11 @@ use alloy::{
     sol_types::private::{Address},
     providers::{ProviderBuilder}, 
 };
-use alloy::sol_types::SolValue;
-use alloy::sol_types::SolCall;
+use alloy::sol_types::{
+    SolValue,
+    SolCall,
+    SolEvent,
+};
 use alloy::transports::http::reqwest::Url;
 
 use alloy_primitives::{
@@ -24,10 +27,14 @@ use margin_mm::{
         ExchangeRouter,
         SwapUtils,
     },
+    eventemitter::{
+        EventEmitter::Swap,
+    },
     erc20::{
         ERC20,
     },
 };
+
 use crate::tx_router::margin_mm::contracts;
 use crate::tx_router::margin_mm::utils;
 use crate::utils::keypair;
@@ -42,7 +49,7 @@ pub async fn buy(
     meme: String,
     amount: U256,
     price_limit: U256,
-) -> Result<(), String> {
+) -> Result<(U256, U256), String> {
    let amount0_in = amount;
    let amount1_out = if price_limit == U256::ZERO {
         U256::ZERO
@@ -59,7 +66,7 @@ pub async fn sell(
     meme: String,
     amount: U256,
     price_limit: U256,
-) -> Result<(), String> {
+) -> Result<(U256, U256), String> {
 
     let amount1_in = amount;
     let amount0_out = if price_limit == U256::ZERO {
@@ -79,7 +86,7 @@ pub async fn swap(
     amount1_in: U256,
     amount0_out: U256,
     amount1_out: U256,
-) -> Result<(), String> {
+) -> Result<(U256, U256), String> {
 
    let signer: PrivateKeySigner = keypair::load_signer_from_file(".env").expect("Failed to load PrivateKeySigner");
    let wallet = EthereumWallet::from(signer.clone());
@@ -87,7 +94,8 @@ pub async fn swap(
 
    //let rpc = (BASE_SEPOLIA).parse().map_err(|e| e.to_string())?;
    let rpc = Url::parse(BASE_SEPOLIA).map_err(|e| e.to_string())?;
-   let client = ProviderBuilder::new().with_cached_nonce_management().wallet(wallet.clone()).on_http(rpc);
+   //let client = ProviderBuilder::new().with_cached_nonce_management().wallet(wallet.clone()).on_http(rpc);
+   let client = ProviderBuilder::new().wallet(wallet.clone()).on_http(rpc);
    let contracts = contracts::load_contracts("deployments/contracts.json");
    let data_store_address = contracts::get_contract_address(&contracts, "DataStore").unwrap();
    let exchange_router_address = contracts::get_contract_address(&contracts, "ExchangeRouter").unwrap();
@@ -169,15 +177,32 @@ pub async fn swap(
         CHAIN_ID,
     ).await;
 
-    if let Ok(_) = result {
+    if let Ok(logs) = result {
+        if logs.len() == 3 {
+            let swap_log = Swap::decode_log(&logs[2], false).unwrap();
+            // dbg!(&swap_log.account);
+            // dbg!(&swap_log.tokenIn);
+            // dbg!(&swap_log.tokenOut);
+            // dbg!(&swap_log.amountIn);
+            // dbg!(&swap_log.amountOut);
+
+            // Create a Swap instance using amountIn and amountOut
+            // let swap = Swap {
+            //     amount_in: swap_log.amountIn,
+            //     amount_out: swap_log.amountOut,
+            // };
+
+            // Return the swap instance
+            return Ok((swap_log.amountIn, swap_log.amountOut));
+        }
+
         println!("Transaction sent successfully!");
     } else if let Err(e) = result {
         eprintln!("Error sending transaction: {}", e);
     }
-    //let result = exchange_router.multicall(multicall_args).send().await.unwrap().get_receipt().await;
-    //println!("Receipt type: {}", std::any::type_name_of_val(&result));
 
-    Ok(()) 
+    // If you reach here, it means no swap was found or an error occurred
+    Err("No valid swap log found.".to_string())
 
 }
 
@@ -188,7 +213,8 @@ pub async fn get_pool(
    let wallet = EthereumWallet::from(signer.clone());
    let owner = wallet.default_signer().address();
    let rpc = Url::parse(BASE_SEPOLIA).map_err(|e| e.to_string())?;
-   let client = ProviderBuilder::new().with_cached_nonce_management().wallet(wallet.clone()).on_http(rpc);
+   //let client = ProviderBuilder::new().with_cached_nonce_management().wallet(wallet.clone()).on_http(rpc);
+   let client = ProviderBuilder::new().wallet(wallet.clone()).on_http(rpc);
    let contracts = contracts::load_contracts("deployments/contracts.json");
 
    let data_store_address = contracts::get_contract_address(&contracts, "DataStore").unwrap();

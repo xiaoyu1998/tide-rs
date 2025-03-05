@@ -5,8 +5,8 @@ edition = "2021"
 
 [dependencies]
 margin-mm = { path = "./crates/margin-mm" }
-alloy = { version = "0.7.3", features = ["full"] }
-alloy-primitives = "0.8.11"
+alloy = { version = "0.11.1", features = ["full"] }
+alloy-primitives = "0.8.22"
 clap = { version = "4.5.27", features = ["derive"]}
 tokio = { version = "1.33.0", features = ["full"] }
 shellexpand = "2.0"

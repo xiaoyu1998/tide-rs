@@ -35,8 +35,10 @@ pub struct SellRequest {
 pub struct Response {
     pub success: bool,
     pub message: String,
-    pub price: Option<f64>, 
-    pub price_decimals: Option<u32>, 
+    // pub price: Option<f64>, 
+    // pub price_decimals: Option<u32>, 
+    pub amount_in: Option<U256>,
+    pub amount_out: Option<U256>,
 }
 
 
@@ -52,19 +54,25 @@ pub struct Pool {
     pub meme_token_decimals: U256,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct GetPoolRequest {
     pub network: String,
     pub market: String,
     pub token: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct GetPoolResponse {
     pub success: bool,
     pub message: String,
     pub pool: Option<Pool>, 
 }
+
+// #[derive(Debug, Serialize, Deserialize)]
+// pub struct Swap {
+//     pub amount_in: U256,
+//     pub amount_out: U256,
+// }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StateCache {

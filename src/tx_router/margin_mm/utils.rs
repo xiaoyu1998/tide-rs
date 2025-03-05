@@ -9,7 +9,7 @@ use alloy::{
     network::{
         TransactionBuilder,
         Network,
-        //ReceiptResponse, 
+        ReceiptResponse, 
         Ethereum
     },
 };
@@ -24,7 +24,7 @@ use alloy_primitives::{
 
 use alloy::rpc::types::{
     TransactionReceipt,
-    // Log,
+    //Log,
 };
 
 use alloy::consensus::{
@@ -39,26 +39,18 @@ use alloy::sol_types::{
     SolEvent,
 };
 
-use margin_mm::{
-    eventemitter::{
-        EventEmitter::Swap,
-    },
-};
 
 type Bytes32 = FixedBytes<32>;
 pub const PRICE_DECIMALS: u32 = 27;
 
-
-pub async fn send_transaction<T, P, N>(
+pub async fn send_transaction<P>(
     client: Arc<P>,
     account: Address,
-    mut tx: <N as Network>::TransactionRequest,
+    mut tx: <Ethereum as Network>::TransactionRequest,
     chain_id: u64,
-) -> Result<(), String>
+) -> Result<Vec<Log>, String>
 where
-    T: Transport + Clone,
-    P: Provider<T, N>,
-    N: Network,
+    P: Provider<Ethereum>,
 {
     tx.set_chain_id(chain_id);
     tx.set_from(account);
@@ -88,28 +80,11 @@ where
         .await
         .map_err(|e| format!("Error getting receipt: {}", e))?;
 
-    // // Force cast (unsafe if not sure of the type)
-    // let tx_receipt: &TransactionReceipt<ReceiptEnvelope<Log>> = unsafe {
-    //     &*(&receipt as *const _ as *const TransactionReceipt<ReceiptEnvelope<Log>>)
-    // };
+    //println!("Receipt type: {}", std::any::type_name_of_val(&receipt));
+    let receipt = receipt.into_primitives_receipt();
+    let logs = get_logs(&receipt);
 
-    // dbg!(tx_receipt);
-    // let receipt: &TransactionReceipt<ReceiptEnvelope<Log>> = &receipt;
-    // let logs = get_logs(receipt);
-    // //dbg!(logs);
-    // println!("Receipt type: {}", std::any::type_name_of_val(&receipt));
-    // // let swap_log = Swap::decode_log(&logs[2], false).unwrap();
-    // // println!("swap_log account: {}", swap_log.account);
-    // // println!("swap_log amountIn: {}", swap_log.amountIn);
-    // // println!("swap_log amountOut: {}", swap_log.amountOut);
-    // if let Some(tx_receipt) = receipt.as_ref() {
-    //     let logs = get_logs(tx_receipt);
-    // } else {
-    //     eprintln!("Receipt is None");
-    // }
-
-
-    Ok(())
+    Ok(logs)
 }
 
 pub fn get_logs(receipt: &TransactionReceipt<ReceiptEnvelope<Log>>) -> Vec<Log> {
@@ -121,16 +96,8 @@ pub fn get_logs(receipt: &TransactionReceipt<ReceiptEnvelope<Log>>) -> Vec<Log> 
         | ReceiptEnvelope::Eip4844(ref receipt_with_bloom)
         | ReceiptEnvelope::Eip7702(ref receipt_with_bloom) => {
 
-            println!("xiaoyu1998 {}", receipt_with_bloom.receipt.logs[0].address);
-            println!("xiaoyu1998 {}", receipt_with_bloom.receipt.logs[0].data.data);
-            // Return the logs from the Receipt
-            //let logs = receipt_with_bloom.receipt.logs.clone();
-            // println!("xiaoyu1998 {}", receipt_with_bloom.receipt.logs[0].address);
-
             // logs
             receipt_with_bloom.receipt.logs.clone()
-
-
         },
         // Handle any unknown or future variants with a wildcard
         _ => {
@@ -221,4 +188,51 @@ pub fn div_pow(price: U256, decimals: U256) -> U256{
 pub fn get_base_units_from_tokens(amount: U256, price: U256, decimal_delta: U256) -> U256{
     amount*price/U256::from(10).pow(decimal_delta)/U256::from(10).pow(U256::from(PRICE_DECIMALS))
 }
+
+
+pub fn format_to_f32(amount: U256, decimals: U256) -> f32 {
+    // Calculate 10^decimals as a U256
+    let divisor = U256::from(10).pow(decimals);
+
+    // Perform the division to get the integer part
+    let integer_part = amount / divisor;
+    let integer_part_f32: f32 = integer_part.try_into().unwrap();
+
+    // Perform the modulus to get the fractional part
+    let remainder = amount % divisor;
+
+    // Convert the remainder into a fraction and divide by the divisor again
+    let fractional_part = remainder * U256::from(10).pow(U256::from(6)) / divisor; // Here we multiply by 10^6 to get more precision
+    let fractional_part_f32 :f32 = fractional_part.try_into().unwrap();
+
+    // Combine integer and fractional parts and return as f32
+    integer_part_f32 + fractional_part_f32 / 1_000_000.0
+}
+
+pub fn calc_price(base_amount: U256, base_decimals: U256, meme_amount: U256, meme_decimals: U256) -> f32 {
+    // Calculate scaling factors for base and meme amounts
+    let base_scale = U256::from(10).pow(base_decimals);
+    let meme_scale = U256::from(10).pow(meme_decimals);
+
+    // Scale both amounts first
+    let scaled_base_amount = base_amount * meme_scale;
+    let scaled_meme_amount = meme_amount * base_scale;
+
+    // Perform the division to get the integer part
+    let integer_part = scaled_base_amount / scaled_meme_amount;
+    let integer_part_f32: f32 = integer_part.try_into().unwrap();
+
+    // Calculate the remainder for the fractional part
+    let remainder = scaled_base_amount % scaled_meme_amount;
+
+    // Scale the remainder to get more precision in the fractional part
+    let fractional_part = remainder * U256::from(10).pow(U256::from(6)) / scaled_meme_amount; // Using 10^6 for 6 decimal precision
+    let fractional_part_f32 :f32 = fractional_part.try_into().unwrap();
+    
+    // Combine integer and fractional parts and return as f32
+    integer_part_f32 + fractional_part_f32 / 1_000_000.0
+}
+
+
+
 

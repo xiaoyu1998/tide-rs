@@ -12,7 +12,7 @@ pub async fn buy(
     token: String,
     amount: U256,
     price_limit: U256,
-) -> Result<(), String> {
+) -> Result<(U256, U256), String> {
 
     // Define the URL of the API endpoint
     let url = format!("{}{}", TX_ROUTER_URL, "/buy");
@@ -44,7 +44,11 @@ pub async fn buy(
                 let response_body: types::Response = res.json()
                     .await
                     .map_err(|e| format!("Error deserializing response: {}", e))?;  // Handle json error
-                Ok(())  // Or use response_body if needed
+                match (response_body.amount_in, response_body.amount_out) {
+                    (Some(amount_in), Some(amount_out)) => Ok((amount_in, amount_out)),
+                    _ => Err("Missing amount_in or amount_out".to_string()),  // Error if any is None
+                }
+                //Ok((response_body.amount_in, response_body.amount_out))  // Or use response_body if needed
             } else {
                 Err(format!("Request failed with status: {}", res.status()))
             }
@@ -59,7 +63,7 @@ pub async fn sell(
     token: String,
     amount: U256,
     price_limit: U256,
-) -> Result<(), String> {
+) -> Result<(U256, U256), String> {
 
     // Define the URL of the API endpoint
     let url = format!("{}{}", TX_ROUTER_URL, "/sell");
@@ -91,62 +95,16 @@ pub async fn sell(
                 let response_body: types::Response = res.json()
                     .await
                     .map_err(|e| format!("Error deserializing response: {}", e))?;  // Handle json error
-                Ok(())  // Or use response_body if needed
+                match (response_body.amount_in, response_body.amount_out) {
+                    (Some(amount_in), Some(amount_out)) => Ok((amount_in, amount_out)),
+                    _ => Err("Missing amount_in or amount_out".to_string()),  // Error if any is None
+                }
+                //Ok((response_body.amount_in, response_body.amount_out))  // Or use response_body if needed
             } else {
                 Err(format!("Request failed with status: {}", res.status()))
             }
         }
         Err(e) => Err(format!("Request error: {}", e.to_string())),  // Convert reqwest::Error to String
-    }
-}
-
-pub async fn get_price(
-    network: String,
-    market: String,
-    token: String,
-) -> Result<(f64,u32), String> {
-
-    // Define the URL of the API endpoint
-    let url = format!("{}{}", TX_ROUTER_URL, "/get_price");
-
-    // Create the client and send the request
-    let client = Client::new();
-
-    // Create the request body
-    let get_price_request = types::GetPriceRequest {
-        network,
-        market,
-        token,
-    };
-
-    // Send the POST request
-    let response = client
-        .post(url)
-        .json(&get_price_request)  // Serialize the GetPriceRequest struct into JSON
-        .send()
-        .await;
-
-    match response {
-        Ok(res) => {
-            if res.status().is_success() {
-                // Deserialize response body into the correct struct
-                let response_body: types::Response = res.json()
-                    .await
-                    .map_err(|e| format!("Error deserializing response: {}", e))?;
-
-                if response_body.success {
-                    match (response_body.price, response_body.price_decimals) {
-                        (Some(price), Some(price_decimals)) => Ok((price, price_decimals)),  // Return both values
-                        _ => Err("Price or price_decimals not available.".to_string()),  // Handle missing data
-                    }
-                } else {
-                    Err(response_body.message)  // Return the error message
-                }
-            } else {
-                Err(format!("Request failed with status: {}", res.status()))
-            }
-        }
-        Err(e) => Err(format!("Request error: {}", e.to_string())),  // Handle request errors
     }
 }
 

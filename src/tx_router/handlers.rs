@@ -20,12 +20,12 @@ async fn buy_handler(body: types::BuyRequest) -> Result<warp::reply::Json, Infal
     };
 
     match result {
-        Ok(_) => {
+        Ok((amount_in, amount_out)) => {
             let response = types::Response {
                 success: true,
                 message: "Tokens bought successfully.".to_string(),
-                price: None,
-                price_decimals: None,
+                amount_in: Some(amount_in),
+                amount_out: Some(amount_out),
             };
             Ok(warp::reply::json(&response))
         }
@@ -33,8 +33,8 @@ async fn buy_handler(body: types::BuyRequest) -> Result<warp::reply::Json, Infal
             let response = types::Response {
                 success: false,
                 message: err,
-                price: None,
-                price_decimals: None,
+                amount_in: None,
+                amount_out: None,
             };
             Ok(warp::reply::json(&response))
         }
@@ -51,12 +51,12 @@ async fn sell_handler(body: types::SellRequest) -> Result<warp::reply::Json, Inf
     };
 
     match result {
-        Ok(_) => {
+        Ok((amount_in, amount_out)) => {
             let response = types::Response {
                 success: true,
                 message: "Tokens sold successfully.".to_string(),
-                price: None,
-                price_decimals: None,
+                amount_in: Some(amount_in),
+                amount_out: Some(amount_out),
             };
             Ok(warp::reply::json(&response))
         }
@@ -64,8 +64,8 @@ async fn sell_handler(body: types::SellRequest) -> Result<warp::reply::Json, Inf
             let response = types::Response {
                 success: false,
                 message: err,
-                price: None,
-                price_decimals: None,
+                amount_in: None,
+                amount_out: None,
             };
             Ok(warp::reply::json(&response))
         }

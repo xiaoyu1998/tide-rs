@@ -102,7 +102,13 @@ pub async fn execute(
                 //price_ceiling_u256,
                 utils::div_pow(price_ceiling_u256, delta_decimals_u256)
             ).await {
-                Ok(_) => println!("Buy trade executed: {} tokens for {} money at price {}", trade_size_tokens_u128, base_units_required_for_buy_u256, current_price_u256),
+                Ok((amount_in, amount_out)) => println!("Buy trade executed: {} {}  {} {}  {}", 
+                    pool.meme_symbol,
+                    utils::format_to_f32(amount_out,meme_decimals_u256),  
+                    pool.base_symbol,
+                    utils::format_to_f32(amount_in, base_decimals_u256), 
+                    utils::calc_price(amount_in, base_decimals_u256, amount_out, meme_decimals_u256)
+                ),
                 Err(e) => return Err(format!("Buy trade failed: {}", e)),
             }
         } else {
@@ -117,7 +123,13 @@ pub async fn execute(
                 utils::div_pow(price_floor_u256, delta_decimals_u256)
                 //U256::ZERO,
             ).await {
-                Ok(_) => println!("Sell trade executed: {} tokens at price {}", trade_size_tokens_u128, current_price_u256),
+                Ok((amount_in, amount_out)) => println!("Sell trade executed: {} {}  {} {}  {}",
+                    pool.meme_symbol, 
+                    utils::format_to_f32(amount_in,meme_decimals_u256),  
+                    pool.base_symbol,
+                    utils::format_to_f32(amount_out, base_decimals_u256),  
+                    utils::calc_price(amount_out, base_decimals_u256, amount_in, meme_decimals_u256)
+                ),
                 Err(e) => return Err(format!("Sell trade failed: {}", e)),
             }
         }

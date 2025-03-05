@@ -33,7 +33,16 @@ pub async fn execute(
        utils::mul_pow_2_half(amount, base_decimals_u32),
        utils::div_pow(utils::mul_pow_2_half(price_limit, utils::PRICE_DECIMALS), delta_decimals)
    ).await {
-        Ok(_) => Ok(()), // If successful, return Ok
+        Ok((amount_in, amount_out)) => {
+            println!("Buy trade executed: {} {}  {} {}  {}", 
+                pool.meme_symbol, 
+                utils::format_to_f32(amount_out,meme_decimals),
+                pool.base_symbol, 
+                utils::format_to_f32(amount_in, base_decimals),
+                utils::calc_price(amount_in, base_decimals, amount_out, meme_decimals)
+            );
+            Ok(()) // If successful, return Ok
+        },
         Err(e) => {
             // Handle error (print/log it, or return a custom error message)
             println!("buy: {:?}", format!("Failed to buy: {}", e));
