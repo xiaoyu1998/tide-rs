@@ -204,31 +204,31 @@ fn hash_position_key(account: Address, position_id: U256) -> Bytes32 {
 
 }
 
-pub fn calculate_real_price(price: U256, price_decimals: U256) -> f64 {
+// pub fn calculate_real_price(price: U256, price_decimals: U256) -> f64 {
 
-    if price_decimals != U256::from(27) {
-        return 0.0
-    }
+//     if price_decimals != U256::from(27) {
+//         return 0.0
+//     }
 
-    // Calculate the scaling factor (10^decimals)
-    let scale_factor =  U256::from(10).pow(price_decimals);
-    let scale_factor_f64 :f64 =  scale_factor.try_into().unwrap();
+//     // Calculate the scaling factor (10^decimals)
+//     let scale_factor =  U256::from(10).pow(price_decimals);
+//     let scale_factor_f64 :f64 =  scale_factor.try_into().unwrap();
 
-    // Divide the price by the scaling factor to get the integer part
-    let integer_part = price / scale_factor;
+//     // Divide the price by the scaling factor to get the integer part
+//     let integer_part = price / scale_factor;
 
-    // Get the remainder (fractional part)
-    let remainder = price % scale_factor;
-    let remainder_f64 :f64 = remainder.try_into().unwrap();
+//     // Get the remainder (fractional part)
+//     let remainder = price % scale_factor;
+//     let remainder_f64 :f64 = remainder.try_into().unwrap();
 
-    // Convert integer part to f64
-    let real_price :f64 = integer_part.try_into().unwrap();
+//     // Convert integer part to f64
+//     let real_price :f64 = integer_part.try_into().unwrap();
 
-    // Convert remainder to a fraction and add it to the integer part
-    let fractional_part :f64 = remainder_f64 / scale_factor_f64;
+//     // Convert remainder to a fraction and add it to the integer part
+//     let fractional_part :f64 = remainder_f64 / scale_factor_f64;
 
-    real_price + fractional_part
-}
+//     real_price + fractional_part
+// }
 
 pub fn mul_pow_2_half(value: f64, decimal: u32) -> U256{
     let first_half = decimal / 2;
@@ -244,17 +244,7 @@ pub fn div_pow(price: U256, decimals: U256) -> U256{
     price/U256::from(10).pow(decimals)
 }
 
-// pub fn adjust_by_type(value: f64, decimal: u32) -> U256{
-//     let first_half = decimal / 2;
-//     let rest_half = decimal - first_half;
-//     U256::from(value * (10u64.pow(first_half)) as f64) * U256::from(10u64.pow(rest_half))
-// }
-
-// pub fn adjust_price_by_type(price: f64, first_half: u32, rest_half:u32) -> U256{
-//     U256::from(price * (10u64.pow(first_half)) as f64) * U256::from(10u64.pow(rest_half))
-// }
-
-pub fn adjust_amount_by_decimals(amount: U256, price: U256, decimal_delta: U256) -> U256{
+pub fn get_base_units_from_tokens(amount: U256, price: U256, decimal_delta: U256) -> U256{
     amount*price/U256::from(10).pow(decimal_delta)/U256::from(10).pow(U256::from(PRICE_DECIMALS))
 }
 

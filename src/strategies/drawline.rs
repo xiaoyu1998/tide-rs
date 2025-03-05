@@ -29,36 +29,6 @@ pub async fn execute(
     //token_balance: f64, // The current token balance for sell
 ) -> Result<(), String> {
    let mut rng = rand::thread_rng();
-    //let (tx, mut rx) = mpsc::channel(1);
-
-    // // Input handling task
-    // tokio::spawn(async move {
-    //     let mut stdin = io::BufReader::new(io::stdin()).lines();
-        
-    //     loop {
-    //         let line = stdin.next_line().await.unwrap();
-    //         match line {
-    //             Some(input) if input == " " => {
-    //                 // Pause the bot when space is pressed
-    //                 tx.send("pause".to_string()).await.unwrap();
-    //                 println!("Bot paused. Press Enter to resume.");
-    //             }
-    //             Some(input) if input == "\n" => {
-    //                 // Resume the bot when Enter is pressed
-    //                 tx.send("resume".to_string()).await.unwrap();
-    //                 println!("Bot resumed.");
-    //             }
-    //             _ => {}
-    //         }
-    //     }
-    // });
-   // let (price, decimals) = match client_apis::get_price(network.clone(), market.clone(), token.clone()).await {
-   //     Ok((price, decimals)) => (price, decimals),
-   //     Err(e) => {
-   //         println!("Failed to fetch price: {}", e);
-   //         return Err(format!("Failed to fetch price: {}", e));
-   //     }
-   // };
 
    let cache = cache::load_or_create_cache(network.clone(), market.clone(), token.clone()).await?;
    let pool = cache.pools.get(&Address::from_str(&token.clone()).unwrap()).unwrap();
@@ -112,30 +82,27 @@ pub async fn execute(
         let trade_size_tokens_u128 = sell_size_tokens_u128/10u128.pow(meme_decimals_u32);
         let sell_size_tokens_u256 = U256::from(sell_size_tokens_u128);
 
-        // dbg!(current_price_u256, sell_size_tokens_u256);
-
         // Randomly decide whether to buy or sell based on the price and trend
         let price_action = rng.gen_bool(0.5); // 50% chance to buy or sell (adjust as needed)
 
         if price_action {
             //let money_required_for_buy = current_price * trade_size_tokens as f64; // Money needed to buy the tokens
-            let money_required_for_buy_u256 = utils::adjust_amount_by_decimals(
+            let base_units_required_for_buy_u256 = utils::get_base_units_from_tokens(
                 sell_size_tokens_u256, 
                 current_price_u256,
                 delta_decimals_u256
             ); 
-            // dbg!(money_required_for_buy_u256);
 
             // Execute buy
             match client_apis::buy(
                 network.clone(),
                 market.clone(),
                 token.clone(),
-                money_required_for_buy_u256, // Using the calculated money amount for buy
+                base_units_required_for_buy_u256, // Using the calculated money amount for buy
                 //price_ceiling_u256,
                 utils::div_pow(price_ceiling_u256, delta_decimals_u256)
             ).await {
-                Ok(_) => println!("Buy trade executed: {} tokens for {} money at price {}", trade_size_tokens_u128, money_required_for_buy_u256, current_price_u256),
+                Ok(_) => println!("Buy trade executed: {} tokens for {} money at price {}", trade_size_tokens_u128, base_units_required_for_buy_u256, current_price_u256),
                 Err(e) => return Err(format!("Buy trade failed: {}", e)),
             }
         } else {
