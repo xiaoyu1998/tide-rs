@@ -170,10 +170,6 @@ pub async fn remove(
    let router_address = contracts::get_contract_address(&contracts, "Router").unwrap();
    let base_address = contracts::get_contract_address(&contracts, "USDT").unwrap();
    let meme_address = Address::from_str(meme.as_str()).unwrap();
-   // let reader = Reader::new(reader_address.clone(), client.clone());
-   // let pook_key = utils::hash_pool_key(base_address, meme_address);
-   // let pools = reader.getPools2(data_store_address,  vec![pook_key]).call().await.unwrap();
-   // let pools = pools._0;
 
 
    let params_remove = LiquidityUtils::RemoveParams{
@@ -254,15 +250,6 @@ pub async fn swap(
     println!("approve {} {}", erc20_address, amount_in);
     utils::approve(Arc::new(client.clone()), router_address, owner, erc20_address, amount_in).await?;
 
-    // let token = ERC20::new(erc20_address, client.clone());
-    // let call_build_approve = token.approve(router_address, amount_in);
-    // let mut tx_approve = call_build_approve.into_transaction_request();
-    // let _ = utils::send_transaction(
-    //     Arc::new(client.clone()),
-    //     owner,
-    //     tx_approve, 
-    //     constants::CHAIN_ID,
-    // ).await?; 
 
    println!("swap exchange_router {} {}", exchange_router_address, amount_in);
    let params_send_tokens = if amount0_in != U256::ZERO {
@@ -310,8 +297,6 @@ pub async fn swap(
 
     if let Ok(logs) = result {
         if logs.len() == 3 {
-            //let swap_log = Swap::decode_log(&logs[2], false).unwrap();
-
             let swap_log:Swap = utils::get_log(&logs).unwrap();
             // Return the swap instance
             return Ok((swap_log.amountIn, swap_log.amountOut));
