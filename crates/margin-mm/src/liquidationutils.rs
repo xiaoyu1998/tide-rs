@@ -21,22 +21,22 @@ pub mod LiquidationUtils {
     /// The creation / init bytecode of the contract.
     ///
     /// ```text
-    ///0x60556032600b8282823980515f1a607314602657634e487b7160e01b5f525f60045260245ffd5b305f52607381538281f3fe730000000000000000000000000000000000000000301460806040525f5ffdfea2646970667358221220685d3b7fd9f5d06399aa7acb099865e64a3df084cdc16e9d99928741fbc1259664736f6c634300081c0033
+    ///0x60556032600b8282823980515f1a607314602657634e487b7160e01b5f525f60045260245ffd5b305f52607381538281f3fe730000000000000000000000000000000000000000301460806040525f5ffdfea26469706673582212207d8b58fb727872caf621f38874716f81b4315582aba63d958fb9a975fa7cb4d464736f6c634300081c0033
     /// ```
     #[rustfmt::skip]
     #[allow(clippy::all)]
     pub static BYTECODE: alloy_sol_types::private::Bytes = alloy_sol_types::private::Bytes::from_static(
-        b"`U`2`\x0B\x82\x82\x829\x80Q_\x1A`s\x14`&WcNH{q`\xE0\x1B_R_`\x04R`$_\xFD[0_R`s\x81S\x82\x81\xF3\xFEs\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R__\xFD\xFE\xA2dipfsX\"\x12 h];\x7F\xD9\xF5\xD0c\x99\xAAz\xCB\t\x98e\xE6J=\xF0\x84\xCD\xC1n\x9D\x99\x92\x87A\xFB\xC1%\x96dsolcC\0\x08\x1C\x003",
+        b"`U`2`\x0B\x82\x82\x829\x80Q_\x1A`s\x14`&WcNH{q`\xE0\x1B_R_`\x04R`$_\xFD[0_R`s\x81S\x82\x81\xF3\xFEs\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R__\xFD\xFE\xA2dipfsX\"\x12 }\x8BX\xFBrxr\xCA\xF6!\xF3\x88tqo\x81\xB41U\x82\xAB\xA6=\x95\x8F\xB9\xA9u\xFA|\xB4\xD4dsolcC\0\x08\x1C\x003",
     );
     /// The runtime bytecode of the contract, as deployed on the network.
     ///
     /// ```text
-    ///0x730000000000000000000000000000000000000000301460806040525f5ffdfea2646970667358221220685d3b7fd9f5d06399aa7acb099865e64a3df084cdc16e9d99928741fbc1259664736f6c634300081c0033
+    ///0x730000000000000000000000000000000000000000301460806040525f5ffdfea26469706673582212207d8b58fb727872caf621f38874716f81b4315582aba63d958fb9a975fa7cb4d464736f6c634300081c0033
     /// ```
     #[rustfmt::skip]
     #[allow(clippy::all)]
     pub static DEPLOYED_BYTECODE: alloy_sol_types::private::Bytes = alloy_sol_types::private::Bytes::from_static(
-        b"s\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R__\xFD\xFE\xA2dipfsX\"\x12 h];\x7F\xD9\xF5\xD0c\x99\xAAz\xCB\t\x98e\xE6J=\xF0\x84\xCD\xC1n\x9D\x99\x92\x87A\xFB\xC1%\x96dsolcC\0\x08\x1C\x003",
+        b"s\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R__\xFD\xFE\xA2dipfsX\"\x12 }\x8BX\xFBrxr\xCA\xF6!\xF3\x88tqo\x81\xB41U\x82\xAB\xA6=\x95\x8F\xB9\xA9u\xFA|\xB4\xD4dsolcC\0\x08\x1C\x003",
     );
     use alloy::contract as alloy_contract;
     /**Creates a new wrapper around an on-chain [`LiquidationUtils`](self) contract instance.

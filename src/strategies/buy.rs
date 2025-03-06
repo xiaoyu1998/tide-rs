@@ -10,6 +10,7 @@ use crate::tx_router::{
         utils,
     }
 };
+use crate::tx_router::margin_mm::constants;
 pub async fn execute(
     network: String,
     market: String,
@@ -31,7 +32,7 @@ pub async fn execute(
        market,
        token,
        utils::mul_pow_2_half(amount, base_decimals_u32),
-       utils::div_pow(utils::mul_pow_2_half(price_limit, utils::PRICE_DECIMALS), delta_decimals)
+       utils::div_pow(utils::mul_pow_2_half(price_limit, constants::PRICE_DECIMALS), delta_decimals)
    ).await {
         Ok((amount_in, amount_out)) => {
             println!("Buy trade executed: {} {}  {} {}  {}", 

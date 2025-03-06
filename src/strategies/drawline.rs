@@ -11,6 +11,7 @@ use alloy_primitives::{U256};
 use crate::tx_router::client_apis;
 use crate::tx_router::margin_mm::utils;
 use crate::tx_router::margin_mm::cache;
+use crate::tx_router::margin_mm::constants;
 
 
 pub async fn execute(
@@ -40,8 +41,8 @@ pub async fn execute(
    // let first_half_u32 = delta_decimals_u32/2;
    // let rest_half_u32 = delta_decimals_u32 - first_half_u32;  
    let base_decimals_u32:u32 = base_decimals_u256.try_into().unwrap();
-   let price_ceiling_u256 = utils::mul_pow_2_half(price_ceiling, utils::PRICE_DECIMALS);
-   let price_floor_u256 = utils::mul_pow_2_half(price_floor, utils::PRICE_DECIMALS);
+   let price_ceiling_u256 = utils::mul_pow_2_half(price_ceiling, constants::PRICE_DECIMALS);
+   let price_floor_u256 = utils::mul_pow_2_half(price_floor, constants::PRICE_DECIMALS);
 
    let meme_decimals_u32:u32 = meme_decimals_u256.try_into().unwrap();
    let tx_trade_size_max = tx_trade_size_max*10u128.pow(meme_decimals_u32);

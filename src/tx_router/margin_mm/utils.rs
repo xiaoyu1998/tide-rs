@@ -1,5 +1,6 @@
 
 use std::sync::Arc;
+use std::error::Error;
 use anyhow::{Context, Result};
 use alloy::{
     transports::Transport, 
@@ -39,9 +40,37 @@ use alloy::sol_types::{
     SolEvent,
 };
 
+use margin_mm::{
+    erc20::{
+        ERC20,
+    },
+};
+use crate::tx_router::margin_mm::constants;
 
 type Bytes32 = FixedBytes<32>;
-pub const PRICE_DECIMALS: u32 = 27;
+
+pub async fn approve<P>(
+    client: Arc<P>,
+    router_address: Address,
+    owner: Address,
+    token: Address,
+    amount: U256,
+) -> Result<(), String>
+where
+    P: Provider<Ethereum>,
+{
+    let token = ERC20::new(token, client.clone());
+    let call_build_approve = token.approve(router_address, amount);
+    let mut tx_approve = call_build_approve.into_transaction_request();
+    let _ = send_transaction(
+        Arc::new(client.clone()),
+        owner,
+        tx_approve, 
+        constants::CHAIN_ID,
+    ).await?; 
+
+    Ok(())
+}
 
 pub async fn send_transaction<P>(
     client: Arc<P>,
@@ -86,6 +115,37 @@ where
 
     Ok(logs)
 }
+
+pub fn get_log<T>(
+    logs: &Vec<Log>,
+    // target_address: Option<Address>,
+) -> Result<T, String>
+where
+    T: SolEvent,
+{
+    // Loop through each log to find the matching one
+    for log in logs {
+        // // Check if the log matches the provided address (if given)
+        // if let Some(address) = target_address {
+        //     if log.address != address {
+        //         continue; // Skip logs from different addresses
+        //     }
+        // }
+
+        // Check if the log's first topic matches the event signature hash of the given type `T`
+        if log.data.topics()[0] != T::SIGNATURE_HASH {
+            continue; // Skip logs that don't match the event signature
+        }
+
+        // Attempt to decode the log into the target type (T)
+        let decoded_log: T = T::decode_log(log, false).unwrap().data; // Use false for non-indexed parameters
+        return Ok(decoded_log); // Return the decoded log
+    }
+
+    // Return None if no matching log is found
+    Err("No valid log found.".to_string())
+}
+
 
 pub fn get_logs(receipt: &TransactionReceipt<ReceiptEnvelope<Log>>) -> Vec<Log> {
     // Match the ReceiptEnvelope variant to access the logs
@@ -186,7 +246,7 @@ pub fn div_pow(price: U256, decimals: U256) -> U256{
 }
 
 pub fn get_base_units_from_tokens(amount: U256, price: U256, decimal_delta: U256) -> U256{
-    amount*price/U256::from(10).pow(decimal_delta)/U256::from(10).pow(U256::from(PRICE_DECIMALS))
+    amount*price/U256::from(10).pow(decimal_delta)/U256::from(10).pow(U256::from(constants::PRICE_DECIMALS))
 }
 
 
