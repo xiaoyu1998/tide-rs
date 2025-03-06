@@ -103,13 +103,10 @@ pub async fn swap(
    let router_address = contracts::get_contract_address(&contracts, "Router").unwrap();
    let base_address = contracts::get_contract_address(&contracts, "USDT").unwrap();
 
-   //dbg!(owner, data_store_address, exchange_router_address, reader_address, base_address);
-
    let meme_address = Address::from_str(meme.as_str()).unwrap();
    let reader = Reader::new(reader_address.clone(), client.clone());
    let pook_key = utils::hash_pool_key(base_address, meme_address);
 
-   //dbg!(meme_address, pook_key);
 
    let pools = reader.getPools2(data_store_address,  vec![pook_key]).call().await.unwrap();
    let pools = pools._0;
@@ -180,18 +177,6 @@ pub async fn swap(
     if let Ok(logs) = result {
         if logs.len() == 3 {
             let swap_log = Swap::decode_log(&logs[2], false).unwrap();
-            // dbg!(&swap_log.account);
-            // dbg!(&swap_log.tokenIn);
-            // dbg!(&swap_log.tokenOut);
-            // dbg!(&swap_log.amountIn);
-            // dbg!(&swap_log.amountOut);
-
-            // Create a Swap instance using amountIn and amountOut
-            // let swap = Swap {
-            //     amount_in: swap_log.amountIn,
-            //     amount_out: swap_log.amountOut,
-            // };
-
             // Return the swap instance
             return Ok((swap_log.amountIn, swap_log.amountOut));
         }
