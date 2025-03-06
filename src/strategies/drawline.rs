@@ -38,8 +38,6 @@ pub async fn execute(
    let delta_decimals_u256 = meme_decimals_u256 - base_decimals_u256;
 
    let delta_decimals_u32:u32 = delta_decimals_u256.try_into().unwrap();
-   // let first_half_u32 = delta_decimals_u32/2;
-   // let rest_half_u32 = delta_decimals_u32 - first_half_u32;  
    let base_decimals_u32:u32 = base_decimals_u256.try_into().unwrap();
    let price_ceiling_u256 = utils::mul_pow_2_half(price_ceiling, constants::PRICE_DECIMALS);
    let price_floor_u256 = utils::mul_pow_2_half(price_floor, constants::PRICE_DECIMALS);
@@ -100,7 +98,6 @@ pub async fn execute(
                 market.clone(),
                 token.clone(),
                 base_units_required_for_buy_u256, // Using the calculated money amount for buy
-                //price_ceiling_u256,
                 utils::div_pow(price_ceiling_u256, delta_decimals_u256)
             ).await {
                 Ok((amount_in, amount_out)) => println!("Buy trade executed: {} {}  {} {}  {}", 
@@ -120,9 +117,7 @@ pub async fn execute(
                 market.clone(),
                 token.clone(),
                 sell_size_tokens_u256, // Selling the token amount
-                //price_floor_u256,
                 utils::div_pow(price_floor_u256, delta_decimals_u256)
-                //U256::ZERO,
             ).await {
                 Ok((amount_in, amount_out)) => println!("Sell trade executed: {} {}  {} {}  {}",
                     pool.meme_symbol, 
