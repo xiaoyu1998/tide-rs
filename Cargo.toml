@@ -4,16 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-margin-meme = { path = "./crates/margin-meme" }
-alloy = { version = "0.7.3", features = ["full"] }
-pumpfun = { path = "./crates/pumpfun-rs/crates/pumpfun"}
-pumpfun-cpi = { path = "./crates/pumpfun-rs/crates/pumpfun-cpi"}
-anchor-client = { version = "0.30.1", features = ["async"] }
-anchor-spl = "0.30.1"
-solana-transaction-status = "1.18.26"
-solana-client = "1.18.26"
-solana-sdk = "1.18.26"
-solana-program = "1.18.26"
+margin-mm = { path = "./crates/margin-mm" }
+alloy = { version = "0.11.1", features = ["full"] }
+alloy-primitives = "0.8.22"
 clap = { version = "4.5.27", features = ["derive"]}
 tokio = { version = "1.33.0", features = ["full"] }
 shellexpand = "2.0"
@@ -25,4 +18,5 @@ warp = "0.3"
 serde = { version = "1.0", features = ["derive"] }
 isahc = "1.7.2"
 borsh = { version = "1.5.3", features = ["derive"] }
-spl-associated-token-account = "3.0.4"
+dotenvy = "0.15.7"
+anyhow = "1.0"
