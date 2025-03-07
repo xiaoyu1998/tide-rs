@@ -20,7 +20,6 @@ pub async fn execute(
     amount: f64,
     price_limit: f64,
 ) -> Result<(), String> {
-
    let cache = cache::load_or_create_cache(network.clone(), market.clone(), token.clone()).await?;
    let pool = cache.pools.get(&Address::from_str(&token.clone()).unwrap()).unwrap();
    let meme_decimals = pool.meme_token_decimals;

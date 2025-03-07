@@ -5,6 +5,10 @@ use std::io::{self, Write};
 use std::path::Path;
 use crate::tx_router::types;
 use crate::tx_router::client_apis;
+use alloy::{
+    sol_types::private::{Address},
+};
+use std::str::FromStr;
 
 const STATE_CACHE_FILE: &str = "state_cache.json";
 // load borrower state cache from file if exists
@@ -37,46 +41,85 @@ pub async fn load_or_create_cache(
     market: String,
     token: String
 ) -> Result<types::StateCache, String> {
-
-    let cache = match load_cache() {
-        Ok(cache) => {
-            //println!("Successfully loaded cache: {:?}", cache);
-            cache
-        }
+    let mut cache = match load_cache() {
+        Ok(mut cache) => cache,
         Err(e) => {
             println!("Failed to load cache: {}", e);
             println!("Creating a new empty cache...");
-            let mut cache = types::StateCache {
+            types::StateCache {
                 pools: HashMap::new(),
-            };
-
-            match client_apis::get_pool(
-                network,
-                market,
-                token
-            ).await {
-                Ok(pool) => {
-                    cache.pools.insert(
-                        pool.meme_token,
-                        pool
-                    );  
-                },
-                Err(e) => {
-                    return Err(format!("Failed to get_pool: {}", e));
-                }
             }
-
-            // Try saving the new cache
-            if let Err(save_err) = save_cache(&cache) {
-                println!("Failed to save new cache: {}", save_err);
-            } else {
-                println!("New cache saved successfully.");
-            }
-
-            cache // Return the newly created empty cache
         }
     };
 
-    Ok(cache)
+    let token_address = match Address::from_str(&token) {
+        Ok(addr) => addr,
+        Err(_) => return Err("Invalid token address".to_string()),
+    };
 
+    if !cache.pools.contains_key(&token_address) {
+        println!("Pool not found in cache, fetching from API...");
+        match client_apis::get_pool(network.clone(), market.clone(), token.clone()).await {
+            Ok(pool) => {
+                cache.pools.insert(pool.meme_token, pool);
+                if let Err(save_err) = save_cache(&cache) {
+                    println!("Failed to save updated cache: {}", save_err);
+                } else {
+                    println!("Updated cache saved successfully.");
+                }
+            },
+            Err(e) => return Err(format!("Failed to fetch pool: {}", e)),
+        }
+    }
+    
+    Ok(cache)
 }
+
+// pub async fn load_or_create_cache(
+//     network: String,
+//     market: String,
+//     token: String
+// ) -> Result<types::StateCache, String> {
+
+//     let cache = match load_cache() {
+//         Ok(cache) => {
+//             //println!("Successfully loaded cache: {:?}", cache);
+//             cache
+//         }
+//         Err(e) => {
+//             println!("Failed to load cache: {}", e);
+//             println!("Creating a new empty cache...");
+//             let mut cache = types::StateCache {
+//                 pools: HashMap::new(),
+//             };
+
+//             match client_apis::get_pool(
+//                 network,
+//                 market,
+//                 token
+//             ).await {
+//                 Ok(pool) => {
+//                     cache.pools.insert(
+//                         pool.meme_token,
+//                         pool
+//                     );  
+//                 },
+//                 Err(e) => {
+//                     return Err(format!("Failed to get_pool: {}", e));
+//                 }
+//             }
+
+//             // Try saving the new cache
+//             if let Err(save_err) = save_cache(&cache) {
+//                 println!("Failed to save new cache: {}", save_err);
+//             } else {
+//                 println!("New cache saved successfully.");
+//             }
+
+//             cache // Return the newly created empty cache
+//         }
+//     };
+
+//     Ok(cache)
+
+// }

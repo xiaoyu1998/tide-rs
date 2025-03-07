@@ -1,3 +1,5 @@
+use std::sync::{Arc, RwLock};
+use std::collections::HashMap;
 use warp::Filter;
 use serde::{Deserialize, Serialize};
 use std::convert::Infallible;
@@ -8,6 +10,26 @@ use crate::tx_router::margin_mm_apis;
 use alloy_primitives::{
     U256,
 };
+
+// #[derive(Clone)]
+// struct RouterState {
+//     client: RpcClient, // Replace with actual client type
+//     network: String,
+//     market: String,
+//     wallets: Arc<RwLock<HashMap<u32, String>>>, // RwLock allows safe mutation
+//     //pools: Arc<RwLock<HashMap<Address, Pool>>>, // RwLock allows safe mutation
+// }
+
+// impl RouterState {
+//     fn new(client: RpcClient, network: &str, market: &str) -> Self {
+//         Self {
+//             client,
+//             network: network.to_string(),
+//             market: market.to_string(),
+//             wallets: Arc::new(RwLock::new(HashMap::new())), // Initialize empty wallets
+//         }
+//     }
+// }
 
 
 // Buy handler function

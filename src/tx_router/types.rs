@@ -68,12 +68,6 @@ pub struct GetPoolResponse {
     pub pool: Option<Pool>, 
 }
 
-// #[derive(Debug, Serialize, Deserialize)]
-// pub struct Swap {
-//     pub amount_in: U256,
-//     pub amount_out: U256,
-// }
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StateCache {
     pub pools: HashMap<Address, Pool>,

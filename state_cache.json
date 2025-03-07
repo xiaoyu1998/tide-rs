@@ -1,7 +1,7 @@
 {
   "pools": {
     "0x4826533b4897376654bb4d4ad88b7fafd0c98528": {
-      "price": "0x2b51f0293fad52e7e771ff0f",
+      "price": "0x2b4ea2b5151ccf56a901d732",
       "price_decimals": "0x1b",
       "base_token": "0x70e0ba845a1a0f2da3359c97e0285013525ffc49",
       "base_symbol": "USDT",

@@ -13,7 +13,6 @@ use crate::tx_router::margin_mm::utils;
 use crate::tx_router::margin_mm::cache;
 use crate::tx_router::margin_mm::constants;
 
-
 pub async fn execute(
     network: String,
     market: String,
