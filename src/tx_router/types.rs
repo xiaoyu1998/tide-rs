@@ -1,9 +1,15 @@
 use serde::{Serialize, Deserialize};
-use std::collections::{HashMap};
+use std::collections::HashMap;
+use std::sync::Arc;
 use alloy_primitives::{
     FixedBytes,
     Address,
     U256,
+};
+
+use alloy::{
+    network::{ Ethereum},
+    providers::{Provider}, 
 };
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -71,5 +77,22 @@ pub struct GetPoolResponse {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StateCache {
     pub pools: HashMap<Address, Pool>,
+}
+
+#[derive(Clone)]
+pub struct RouterState<P>
+where
+    P: Provider<Ethereum> + Send + Sync + 'static,
+{
+    pub client: Arc<P>, // Use trait object
+    pub network: String,
+    pub market: String,
+    pub contracts: HashMap<String, Address>,
+    pub owner: Address,
+    pub data_store_address: Address,
+    pub exchange_router_address: Address,
+    pub reader_address: Address,
+    pub router_address: Address,
+    pub base_address: Address,
 }
 

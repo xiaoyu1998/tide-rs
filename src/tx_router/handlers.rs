@@ -10,33 +10,65 @@ use crate::tx_router::margin_mm_apis;
 use alloy_primitives::{
     U256,
 };
-
-// #[derive(Clone)]
-// struct RouterState {
-//     client: RpcClient, // Replace with actual client type
-//     network: String,
-//     market: String,
-//     wallets: Arc<RwLock<HashMap<u32, String>>>, // RwLock allows safe mutation
-//     //pools: Arc<RwLock<HashMap<Address, Pool>>>, // RwLock allows safe mutation
-// }
-
-// impl RouterState {
-//     fn new(client: RpcClient, network: &str, market: &str) -> Self {
-//         Self {
-//             client,
-//             network: network.to_string(),
-//             market: market.to_string(),
-//             wallets: Arc::new(RwLock::new(HashMap::new())), // Initialize empty wallets
-//         }
-//     }
-// }
+use alloy::transports::http::reqwest::Url;
+use alloy::{
+    network::{EthereumWallet, Ethereum},
+    signers::local::PrivateKeySigner,
+    sol_types::private::{Address},
+    providers::{Provider, ProviderBuilder}, 
+};
+use crate::utils::keypair;
+use crate::tx_router::margin_mm::constants;
+use crate::tx_router::margin_mm::contracts;
+use crate::tx_router::margin_mm::utils;
+use crate::tx_router::types::RouterState;
 
 
-// Buy handler function
-async fn buy_handler(body: types::BuyRequest) -> Result<warp::reply::Json, Infallible> {
+impl<P> RouterState<P>
+where
+    P: Provider<Ethereum> + Send + Sync + 'static,
+{
+    fn new(network: &str, market: &str, provider: Arc<P>, owner: Address) -> Result<Self, String> {
+
+        let contracts = contracts::load_contracts("deployments/contracts.json");
+
+        let data_store_address = contracts::get_contract_address(&contracts, "DataStore")
+            .ok_or("Missing DataStore contract")?;
+        let exchange_router_address = contracts::get_contract_address(&contracts, "ExchangeRouter")
+            .ok_or("Missing ExchangeRouter contract")?;
+        let reader_address = contracts::get_contract_address(&contracts, "Reader")
+            .ok_or("Missing Reader contract")?;
+        let router_address = contracts::get_contract_address(&contracts, "Router")
+            .ok_or("Missing Router contract")?;
+        let base_address = contracts::get_contract_address(&contracts, "USDT")
+            .ok_or("Missing USDT contract")?;
+
+        Ok(Self {
+            client: provider,
+            network: network.to_string(),
+            market: market.to_string(),
+            contracts,
+            owner,
+            data_store_address,
+            exchange_router_address,
+            reader_address,
+            router_address,
+            base_address,
+        })
+    }
+}
+
+ 
+async fn buy_handler<P>(
+    state: Arc<RouterState<P>>, 
+    body: types::BuyRequest
+) -> Result<warp::reply::Json, Infallible>
+where
+    P: Provider<Ethereum> + Send + Sync + 'static, // Ensure the correct provider is passed
+{
     println!("buy_handler: {:?}", body);
     let result = if body.network == "base" && body.market == "marginmm" {
-        margin_mm_apis::buy(body.token, body.amount, body.price_limit).await
+        margin_mm_apis::buy(state.clone(), body.token, body.amount, body.price_limit).await
     } else {
         Err("Network and market mismatch".to_string())
     };
@@ -63,11 +95,19 @@ async fn buy_handler(body: types::BuyRequest) -> Result<warp::reply::Json, Infal
     }
 }
 
+
+
 // Sell handler function
-async fn sell_handler(body: types::SellRequest) -> Result<warp::reply::Json, Infallible> {
+async fn sell_handler<P>(
+    state: Arc<RouterState<P>>, 
+    body: types::SellRequest
+) -> Result<warp::reply::Json, Infallible>
+where
+    P: Provider<Ethereum> + Send + Sync + 'static, // Ensure the correct provider is passed
+{
     println!("sell_handler: {:?}", body);
     let result = if body.network == "base" && body.market == "marginmm" {
-        margin_mm_apis::sell(body.token, body.amount, body.price_limit).await
+        margin_mm_apis::sell(state, body.token, body.amount, body.price_limit).await
     } else {
         Err("Network and market mismatch".to_string())
     };
@@ -95,10 +135,16 @@ async fn sell_handler(body: types::SellRequest) -> Result<warp::reply::Json, Inf
 }
 
 // Get Price handler function
-async fn get_pool_handler(body: types::GetPoolRequest) -> Result<warp::reply::Json, Infallible> {
+async fn get_pool_handler<P>(
+    state: Arc<RouterState<P>>, 
+    body: types::GetPoolRequest
+) -> Result<warp::reply::Json, Infallible> 
+where
+    P: Provider<Ethereum> + Send + Sync + 'static, // Ensure the correct provider is passed
+{
     println!("get_pool_handler: {:?}", body);
     let result = if body.network == "base" && body.market == "marginmm" {
-        margin_mm_apis::get_pool(body.token).await
+        margin_mm_apis::get_pool(state, body.token).await
     } else {
         Err("Network and market mismatch".to_string())
     };
@@ -133,29 +179,49 @@ async fn get_pool_handler(body: types::GetPoolRequest) -> Result<warp::reply::Js
 }
 
 pub async fn start() {
-    //Define the routes for both `buy` and `sell` functions
+    let network = "base";
+    let market = "marginmm";
+
+    let signer = keypair::load_signer_from_file(".env").map_err(|e| e.to_string()).unwrap();
+    let wallet = EthereumWallet::from(signer.clone());
+    let owner = wallet.default_signer().address();
+    let rpc = Url::parse(constants::BASE_SEPOLIA).map_err(|e| e.to_string()).unwrap();
+    let client = ProviderBuilder::new().wallet(wallet.clone()).on_http(rpc);
+
+    let state = match RouterState::new(network, market, Arc::new(client.clone()), owner) {
+        Ok(state) => Arc::new(state),
+        Err(e) => {
+            eprintln!("Failed to initialize RouterState: {}", e);
+            return;
+        }
+    };
+
+    let buy_state = Arc::clone(&state);
+    let sell_state = Arc::clone(&state);
+    let get_price_state = Arc::clone(&state);
+
     let buy_route = warp::path("buy")
         .and(warp::post())
+        .and(warp::any().map(move || Arc::clone(&buy_state)))
         .and(warp::body::json())
         .and_then(buy_handler);
 
     let sell_route = warp::path("sell")
         .and(warp::post())
+        .and(warp::any().map(move || Arc::clone(&sell_state)))
         .and(warp::body::json())
         .and_then(sell_handler);
 
     let get_price_route = warp::path("get_pool")
         .and(warp::post())
+        .and(warp::any().map(move || Arc::clone(&get_price_state)))
         .and(warp::body::json())
         .and_then(get_pool_handler);
 
-    // Combine both routes
     let routes = buy_route.or(sell_route).or(get_price_route);
-    //let routes = create_and_buy_route;
 
     println!("tx_router listening on: 127.0.0.1:3030");
 
-    // Start the server
     warp::serve(routes)
         .run(([127, 0, 0, 1], 3030))
         .await;

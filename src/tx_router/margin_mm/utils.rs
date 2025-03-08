@@ -158,13 +158,13 @@ pub fn get_logs(receipt: &TransactionReceipt<ReceiptEnvelope<Log>>) -> Vec<Log> 
 
             // logs
             receipt_with_bloom.receipt.logs.clone()
-        },
-        // Handle any unknown or future variants with a wildcard
-        _ => {
-            // You can return an empty Vec<Log> or handle it differently if needed
-            eprintln!("Unexpected ReceiptEnvelope variant");
-            Vec::new() // Returning an empty vector in case of unexpected variant
         }
+        // // Handle any unknown or future variants with a wildcard
+        // _ => {
+        //     // You can return an empty Vec<Log> or handle it differently if needed
+        //     eprintln!("Unexpected ReceiptEnvelope variant");
+        //     Vec::new() // Returning an empty vector in case of unexpected variant
+        // }
     }
 }
 
