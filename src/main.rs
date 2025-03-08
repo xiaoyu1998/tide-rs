@@ -20,7 +20,13 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     /// Start Tx Rounter
-    StartTxRouter,
+    StartTxRouter{
+         #[arg(short, long, default_value_t = String::from("base"))]
+        network: String,   
+
+        #[arg(short, long, default_value_t = String::from("marginmm"))]
+        market: String, 
+    },
     
     /// Drawline
     Drawline{
@@ -108,8 +114,8 @@ async fn main() -> tokio::io::Result<()> {
         Commands::Start => {
             //let _ = start_server().await;
         }
-        Commands::StartTxRouter => {
-            let _ = tx_router::handlers::start().await;
+        Commands::StartTxRouter { network, market }=> {
+            let _ = tx_router::handlers::start(network.clone(), market.clone()).await;
         }
         Commands::Buy { network, market, token, amount, price_limit } => {
             let _ = strategies::buy::execute(

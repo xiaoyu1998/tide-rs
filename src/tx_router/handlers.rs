@@ -178,9 +178,9 @@ where
     }
 }
 
-pub async fn start() {
-    let network = "base";
-    let market = "marginmm";
+pub async fn start(network:String, market:String) {
+    // let network = "base";
+    // let market = "marginmm";
 
     let signer = keypair::load_signer_from_file(".env").map_err(|e| e.to_string()).unwrap();
     let wallet = EthereumWallet::from(signer.clone());
@@ -188,7 +188,7 @@ pub async fn start() {
     let rpc = Url::parse(constants::BASE_SEPOLIA).map_err(|e| e.to_string()).unwrap();
     let client = ProviderBuilder::new().wallet(wallet.clone()).on_http(rpc);
 
-    let state = match RouterState::new(network, market, Arc::new(client.clone()), owner) {
+    let state = match RouterState::new(&network, &market, Arc::new(client.clone()), owner) {
         Ok(state) => Arc::new(state),
         Err(e) => {
             eprintln!("Failed to initialize RouterState: {}", e);
