@@ -88,7 +88,7 @@ pub async fn add<P>(
     state: Arc<RouterState<P>>, 
     meme: String,
     liquidity: U256,
-) -> Result<U256, String> 
+) -> Result<(U256,U256,U256), String> 
 where
     P: Provider<Ethereum> + Send + Sync + 'static, // Ensure the correct provider is passed
 {
@@ -108,6 +108,8 @@ where
    let amount1 = pairOut._1;
    utils::approve(state.client.clone(), router_address, owner, base_address, amount0).await?;
    utils::approve(state.client.clone(), router_address, owner, meme_address, amount1).await?;
+
+   dbg!(amount0, amount1);
 
    //add
    let pook_key = utils::hash_pool_key(base_address, meme_address);
@@ -129,10 +131,14 @@ where
         to: owner,
     };
 
+   let params_execute_add = ExchangeRouter::executeAddCall{
+        params:params_add,
+    };
+
     let multicall_args = vec![
         Bytes::from(params_send_tokens_base.abi_encode()),
         Bytes::from(params_send_tokens_meme.abi_encode()),
-        Bytes::from(params_add.abi_encode()),
+        Bytes::from(params_execute_add.abi_encode()),
     ];
 
     let exchange_router = ExchangeRouter::new(exchange_router_address, state.client.clone());
@@ -146,10 +152,11 @@ where
     ).await;
 
     if let Ok(logs) = result {
-        if logs.len() == 5 {
-            let add_log = Add::decode_log(&logs[4], false).unwrap();
+        //dbg!(logs.len());
+        if logs.len() == 4 {
+            let add_log:Add = utils::get_log(&logs).unwrap();
             // Return the swap instance
-            return Ok(add_log.liquidity);
+            return Ok((add_log.liquidity, amount0, amount1));
         }
 
         println!("Transaction sent successfully!");
@@ -186,8 +193,12 @@ where
         to: owner,
     };
 
+   let params_execute_remove = ExchangeRouter::executeRemoveCall{
+        params:params_remove,
+    };
+
     let multicall_args = vec![
-        Bytes::from(params_remove.abi_encode()),
+        Bytes::from(params_execute_remove.abi_encode()),
     ];
 
     let exchange_router = ExchangeRouter::new(exchange_router_address, state.client.clone());
@@ -201,11 +212,12 @@ where
     ).await;
 
     if let Ok(logs) = result {
-        if logs.len() == 5 {
-            let remove_log = Remove::decode_log(&logs[4], false).unwrap();
+        dbg!(logs.len());
+        // if logs.len() == 4 {
+            let remove_log:Remove = utils::get_log(&logs).unwrap();
             // Return the swap instance
             return Ok((remove_log.baseAmount, remove_log.memeAmount));
-        }
+        // }
 
         println!("Transaction sent successfully!");
     } else if let Err(e) = result {

@@ -6,6 +6,54 @@ use alloy_primitives::{
 
 pub const TX_ROUTER_URL : &str = "http://127.0.0.1:3030";
 
+pub async fn add(
+    network: String,
+    market: String,
+    token: String,
+    liquidity: u64,
+) -> Result<(U256, U256, U256), String> {
+
+    // Define the URL of the API endpoint
+    let url = format!("{}{}", TX_ROUTER_URL, "/add");
+
+    // Create the client and send the request
+    let client = Client::new();
+
+    // Create the request body
+    let add_request = types::AddRequest {
+        network,
+        market,
+        token,
+        liquidity
+    };
+
+    // Send the POST request
+    let response = client
+        .post(url)
+        .json(&add_request)  // Serialize the BuyRequest struct into JSON
+        .send()
+        .await;
+
+    // Handle errors properly
+    match response {
+        Ok(res) => {
+            // Check if the response status is OK (status code 200)
+            if res.status().is_success() {
+                let response_body: types::AddResponse = res.json()
+                    .await
+                    .map_err(|e| format!("Error deserializing response: {}", e))?;  // Handle json error
+                match (response_body.liquidity, response_body.amount0, response_body.amount1) {
+                    (Some(liquidity), Some(amount0), Some(amount1)) => Ok((liquidity, amount0, amount1)),
+                    _ => Err("Missing amount0 or amount1".to_string()),  // Error if any is None
+                }
+            } else {
+                Err(format!("Request failed with status: {}", res.status()))
+            }
+        }
+        Err(e) => Err(format!("Request error: {}", e.to_string())),  // Convert reqwest::Error to String
+    }
+}
+
 pub async fn buy(
     network: String,
     market: String,

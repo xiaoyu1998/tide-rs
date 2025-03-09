@@ -27,7 +27,34 @@ enum Commands {
         #[arg(short, long, default_value_t = String::from("marginmm"))]
         market: String, 
     },
-    
+    /// Add
+    Add{
+        #[arg(short, long, default_value_t = String::from("base"))]
+        network: String,   
+
+        #[arg(short, long, default_value_t = String::from("marginmm"))]
+        market: String, 
+
+        #[arg(short, long)]
+        token: String,   
+
+        #[arg(short, long)]
+        liquidity: u64,  
+    },
+    /// Remove
+    Remove{
+        #[arg(short, long, default_value_t = String::from("base"))]
+        network: String,   
+
+        #[arg(short, long, default_value_t = String::from("marginmm"))]
+        market: String, 
+
+        #[arg(short, long)]
+        token: String,   
+
+        #[arg(short, long)]
+        liquidity: u64,  
+    },
     /// Drawline
     Drawline{
         #[arg(long, default_value_t = String::from("base"))]
@@ -116,6 +143,22 @@ async fn main() -> tokio::io::Result<()> {
         }
         Commands::StartTxRouter { network, market }=> {
             let _ = tx_router::handlers::start(network.clone(), market.clone()).await;
+        }
+        Commands::Remove { network, market, token, liquidity } => {
+            let _ = strategies::add::execute(
+                network.clone(),
+                market.clone(),
+                token.clone(),
+                *liquidity,
+            ).await;
+        }
+        Commands::Add { network, market, token, liquidity } => {
+            let _ = strategies::add::execute(
+                network.clone(),
+                market.clone(),
+                token.clone(),
+                *liquidity,
+            ).await;
         }
         Commands::Buy { network, market, token, amount, price_limit } => {
             let _ = strategies::buy::execute(

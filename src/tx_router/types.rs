@@ -41,12 +41,25 @@ pub struct SellRequest {
 pub struct Response {
     pub success: bool,
     pub message: String,
-    // pub price: Option<f64>, 
-    // pub price_decimals: Option<u32>, 
     pub amount_in: Option<U256>,
     pub amount_out: Option<U256>,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct AddRequest {
+    pub network: String,
+    pub market: String,
+    pub token: String,
+    pub liquidity: u64,
+}
+#[derive(Serialize, Deserialize, Debug)]
+pub struct AddResponse {
+    pub success: bool,
+    pub message: String,
+    pub liquidity: Option<U256>,
+    pub amount0: Option<U256>,
+    pub amount1: Option<U256>,
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Pool {

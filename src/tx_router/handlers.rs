@@ -57,6 +57,44 @@ where
         })
     }
 }
+
+async fn add_handler<P>(
+    state: Arc<RouterState<P>>, 
+    body: types::AddRequest
+) -> Result<warp::reply::Json, Infallible>
+where
+    P: Provider<Ethereum> + Send + Sync + 'static, // Ensure the correct provider is passed
+{
+    println!("add_handler: {:?}", body);
+    let result = if body.network == "base" && body.market == "marginmm" {
+        margin_mm_apis::add(state.clone(), body.token, U256::from(body.liquidity)).await
+    } else {
+        Err("Network and market mismatch".to_string())
+    };
+
+    match result {
+        Ok((liquidity, amount0, amount1)) => {
+            let response = types::AddResponse {
+                success: true,
+                message: "Liquidity added successfully.".to_string(),
+                liquidity: Some(liquidity),
+                amount0: Some(amount0),
+                amount1: Some(amount1),
+            };
+            Ok(warp::reply::json(&response))
+        }
+        Err(err) => {
+            let response = types::AddResponse {
+                success: false,
+                message: err,
+                liquidity: None,
+                amount0: None,
+                amount1: None,
+            };
+            Ok(warp::reply::json(&response))
+        }
+    }
+}
  
 async fn buy_handler<P>(
     state: Arc<RouterState<P>>, 
@@ -191,9 +229,16 @@ pub async fn start(network:String, market:String) {
         }
     };
 
+    let add_state = Arc::clone(&state);
     let buy_state = Arc::clone(&state);
     let sell_state = Arc::clone(&state);
     let get_price_state = Arc::clone(&state);
+
+    let add_route = warp::path("add")
+        .and(warp::post())
+        .and(warp::any().map(move || Arc::clone(&add_state)))
+        .and(warp::body::json())
+        .and_then(add_handler);
 
     let buy_route = warp::path("buy")
         .and(warp::post())
@@ -207,13 +252,13 @@ pub async fn start(network:String, market:String) {
         .and(warp::body::json())
         .and_then(sell_handler);
 
-    let get_price_route = warp::path("get_pool")
+    let get_pool_route = warp::path("get_pool")
         .and(warp::post())
         .and(warp::any().map(move || Arc::clone(&get_price_state)))
         .and(warp::body::json())
         .and_then(get_pool_handler);
 
-    let routes = buy_route.or(sell_route).or(get_price_route);
+    let routes = buy_route.or(sell_route).or(get_pool_route).or(add_route);
 
     println!("tx_router listening on: 127.0.0.1:3030");
 
