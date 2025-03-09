@@ -95,6 +95,42 @@ where
         }
     }
 }
+
+async fn remove_handler<P>(
+    state: Arc<RouterState<P>>, 
+    body: types::RemoveRequest
+) -> Result<warp::reply::Json, Infallible>
+where
+    P: Provider<Ethereum> + Send + Sync + 'static, // Ensure the correct provider is passed
+{
+    println!("remove_handler: {:?}", body);
+    let result = if body.network == "base" && body.market == "marginmm" {
+        margin_mm_apis::remove(state.clone(), body.token, U256::from(body.liquidity)).await
+    } else {
+        Err("Network and market mismatch".to_string())
+    };
+
+    match result {
+        Ok((amount0, amount1)) => {
+            let response = types::RemoveResponse {
+                success: true,
+                message: "Liquidity added successfully.".to_string(),
+                amount0: Some(amount0),
+                amount1: Some(amount1),
+            };
+            Ok(warp::reply::json(&response))
+        }
+        Err(err) => {
+            let response = types::RemoveResponse {
+                success: false,
+                message: err,
+                amount0: None,
+                amount1: None,
+            };
+            Ok(warp::reply::json(&response))
+        }
+    }
+}
  
 async fn buy_handler<P>(
     state: Arc<RouterState<P>>, 

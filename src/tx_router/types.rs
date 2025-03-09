@@ -61,6 +61,21 @@ pub struct AddResponse {
     pub amount1: Option<U256>,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct RemoveRequest {
+    pub network: String,
+    pub market: String,
+    pub token: String,
+    pub liquidity: u64,
+}
+#[derive(Serialize, Deserialize, Debug)]
+pub struct RemoveResponse {
+    pub success: bool,
+    pub message: String,
+    pub amount0: Option<U256>,
+    pub amount1: Option<U256>,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Pool {
     pub price: U256,

@@ -145,7 +145,7 @@ async fn main() -> tokio::io::Result<()> {
             let _ = tx_router::handlers::start(network.clone(), market.clone()).await;
         }
         Commands::Remove { network, market, token, liquidity } => {
-            let _ = strategies::add::execute(
+            let _ = strategies::remove::execute(
                 network.clone(),
                 market.clone(),
                 token.clone(),

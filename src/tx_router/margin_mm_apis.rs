@@ -109,7 +109,7 @@ where
    utils::approve(state.client.clone(), router_address, owner, base_address, amount0).await?;
    utils::approve(state.client.clone(), router_address, owner, meme_address, amount1).await?;
 
-   dbg!(amount0, amount1);
+   //dbg!(amount0, amount1);
 
    //add
    let pook_key = utils::hash_pool_key(base_address, meme_address);
