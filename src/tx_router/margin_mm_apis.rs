@@ -72,7 +72,6 @@ pub async fn sell<P>(
 where
     P: Provider<Ethereum> + Send + Sync + 'static, // Ensure the correct provider is passed
 {
-
     let amount1_in = amount;
     let amount0_out = if price_limit == U256::ZERO {
         U256::ZERO
@@ -85,33 +84,35 @@ where
     return swap(state, meme, U256::ZERO, amount1_in, amount0_out, U256::ZERO).await;
 }
 
-pub async fn add(
+pub async fn add<P>(
+    state: Arc<RouterState<P>>, 
     meme: String,
-    amount0: U256,
-    amount1: U256,
-) -> Result<U256, String> {
+    liquidity: U256,
+) -> Result<U256, String> 
+where
+    P: Provider<Ethereum> + Send + Sync + 'static, // Ensure the correct provider is passed
+{
 
-   let signer: PrivateKeySigner = keypair::load_signer_from_file(".env").expect("Failed to load PrivateKeySigner");
-   let wallet = EthereumWallet::from(signer.clone());
-   let owner = wallet.default_signer().address();
-
-   let rpc = Url::parse(constants::BASE_SEPOLIA).map_err(|e| e.to_string())?;
-   let client = ProviderBuilder::new().wallet(wallet.clone()).on_http(rpc);
-   let contracts = contracts::load_contracts("deployments/contracts.json");
-   let data_store_address = contracts::get_contract_address(&contracts, "DataStore").unwrap();
-   let exchange_router_address = contracts::get_contract_address(&contracts, "ExchangeRouter").unwrap();
-   let reader_address = contracts::get_contract_address(&contracts, "Reader").unwrap();
-   let router_address = contracts::get_contract_address(&contracts, "Router").unwrap();
-   let base_address = contracts::get_contract_address(&contracts, "USDT").unwrap();
+   let owner = state.owner;
+   let data_store_address = state.data_store_address;
+   let exchange_router_address = state.exchange_router_address;
+   let reader_address = state.reader_address;
+   let router_address = state.router_address;
+   let base_address = state.base_address;
    let meme_address = Address::from_str(meme.as_str()).unwrap();
-   let reader = Reader::new(reader_address.clone(), client.clone());
+   let reader = Reader::new(reader_address.clone(), state.client.clone());
+
+   //approve
+   let pairOut = reader.calcTokenPairOut(data_store_address,  base_address, meme_address, liquidity).call().await.unwrap();
+   let amount0 = pairOut._0;
+   let amount1 = pairOut._1;
+   utils::approve(state.client.clone(), router_address, owner, base_address, amount0).await?;
+   utils::approve(state.client.clone(), router_address, owner, meme_address, amount1).await?;
+
+   //add
    let pook_key = utils::hash_pool_key(base_address, meme_address);
    let pools = reader.getPools2(data_store_address,  vec![pook_key]).call().await.unwrap();
    let pools = pools._0;
-
-   utils::approve(Arc::new(client.clone()), router_address, owner, base_address, amount0).await?;
-   utils::approve(Arc::new(client.clone()), router_address, owner, meme_address, amount1).await?;
-
    let params_send_tokens_base = ExchangeRouter::sendTokensCall {
         token: base_address,
         receiver: pools[0].bank,
@@ -134,11 +135,11 @@ pub async fn add(
         Bytes::from(params_add.abi_encode()),
     ];
 
-    let exchange_router = ExchangeRouter::new(exchange_router_address, Arc::new(client.clone()));
+    let exchange_router = ExchangeRouter::new(exchange_router_address, state.client.clone());
     let call_build = exchange_router.multicall(multicall_args);
     let mut tx = call_build.into_transaction_request();
     let result = utils::send_transaction(
-        Arc::new(client.clone()),
+        state.client.clone(),
         owner,
         tx, 
         constants::CHAIN_ID,
@@ -161,25 +162,22 @@ pub async fn add(
 
 }
 
-pub async fn remove(
+pub async fn remove<P>(
+    state: Arc<RouterState<P>>, 
     meme: String,
     liquidity: U256,
-) -> Result<(U256, U256), String> {
+) -> Result<(U256, U256), String> 
+where
+    P: Provider<Ethereum> + Send + Sync + 'static, // Ensure the correct provider is passed
+{
 
-   let signer: PrivateKeySigner = keypair::load_signer_from_file(".env").expect("Failed to load PrivateKeySigner");
-   let wallet = EthereumWallet::from(signer.clone());
-   let owner = wallet.default_signer().address();
-   let rpc = Url::parse(constants::BASE_SEPOLIA).map_err(|e| e.to_string())?;
-   let client = ProviderBuilder::new().wallet(wallet.clone()).on_http(rpc);
-   let contracts = contracts::load_contracts("deployments/contracts.json");
-
-   let data_store_address = contracts::get_contract_address(&contracts, "DataStore").unwrap();
-   let exchange_router_address = contracts::get_contract_address(&contracts, "ExchangeRouter").unwrap();
-   let reader_address = contracts::get_contract_address(&contracts, "Reader").unwrap();
-   let router_address = contracts::get_contract_address(&contracts, "Router").unwrap();
-   let base_address = contracts::get_contract_address(&contracts, "USDT").unwrap();
+   let owner = state.owner;
+   let data_store_address = state.data_store_address;
+   let exchange_router_address = state.exchange_router_address;
+   let reader_address = state.reader_address;
+   let router_address = state.router_address;
+   let base_address = state.base_address;
    let meme_address = Address::from_str(meme.as_str()).unwrap();
-
 
    let params_remove = LiquidityUtils::RemoveParams{
         token0: base_address,
@@ -192,11 +190,11 @@ pub async fn remove(
         Bytes::from(params_remove.abi_encode()),
     ];
 
-    let exchange_router = ExchangeRouter::new(exchange_router_address, Arc::new(client.clone()));
+    let exchange_router = ExchangeRouter::new(exchange_router_address, state.client.clone());
     let call_build = exchange_router.multicall(multicall_args);
     let mut tx = call_build.into_transaction_request();
     let result = utils::send_transaction(
-        Arc::new(client.clone()),
+        state.client.clone(),
         owner,
         tx, 
         constants::CHAIN_ID,
@@ -231,37 +229,20 @@ pub async fn swap<P>(
 where
     P: Provider<Ethereum> + Send + Sync + 'static, // Ensure the correct provider is passed
 {
+    let owner = state.owner;
+    let data_store_address = state.data_store_address;
+    let exchange_router_address = state.exchange_router_address;
+    let reader_address = state.reader_address;
+    let router_address = state.router_address;
+    let base_address = state.base_address;
+    let meme_address = Address::from_str(meme.as_str()).unwrap();
+    let reader = Reader::new(reader_address.clone(), state.client.clone());
+    let pook_key = utils::hash_pool_key(base_address, meme_address);
 
-   // let signer: PrivateKeySigner = keypair::load_signer_from_file(".env").expect("Failed to load PrivateKeySigner");
-   // let wallet = EthereumWallet::from(signer.clone());
-   // let owner = wallet.default_signer().address();
+    let pools = reader.getPools2(data_store_address,  vec![pook_key]).call().await.unwrap();
+    let pools = pools._0;
 
-   // let rpc = Url::parse(constants::BASE_SEPOLIA).map_err(|e| e.to_string())?;
-   // let client = ProviderBuilder::new().wallet(wallet.clone()).on_http(rpc);
-   // let contracts = contracts::load_contracts("deployments/contracts.json");
-
-
-   // let data_store_address = contracts::get_contract_address(&state.contracts, "DataStore").unwrap();
-   // let exchange_router_address = contracts::get_contract_address(&state.contracts, "ExchangeRouter").unwrap();
-   // let reader_address = contracts::get_contract_address(&state.contracts, "Reader").unwrap();
-   // let router_address = contracts::get_contract_address(&state.contracts, "Router").unwrap();
-   // let base_address = contracts::get_contract_address(&state.contracts, "USDT").unwrap();
-
-   let owner = state.owner;
-   let data_store_address = state.data_store_address;
-   let exchange_router_address = state.exchange_router_address;
-   let reader_address = state.reader_address;
-   let router_address = state.router_address;
-   let base_address = state.base_address;
-   let meme_address = Address::from_str(meme.as_str()).unwrap();
-   let reader = Reader::new(reader_address.clone(), state.client.clone());
-   let pook_key = utils::hash_pool_key(base_address, meme_address);
-
-
-   let pools = reader.getPools2(data_store_address,  vec![pook_key]).call().await.unwrap();
-   let pools = pools._0;
-
-   let (erc20_address, amount_in) = if amount0_in != U256::ZERO && amount1_in == U256::ZERO {
+    let (erc20_address, amount_in) = if amount0_in != U256::ZERO && amount1_in == U256::ZERO {
        (base_address, amount0_in)
     } else if amount1_in != U256::ZERO && amount0_in == U256::ZERO {
        (meme_address, amount1_in)
@@ -270,26 +251,24 @@ where
     };
 
     println!("approve {} {}", erc20_address, amount_in);
-    //utils::approve(Arc::new(client.clone()), router_address, owner, erc20_address, amount_in).await?;
     utils::approve(state.client.clone(), router_address, owner, erc20_address, amount_in).await?;
 
-
-   println!("swap exchange_router {} {}", exchange_router_address, amount_in);
-   let params_send_tokens = if amount0_in != U256::ZERO {
+    println!("swap exchange_router {} {}", exchange_router_address, amount_in);
+    let params_send_tokens = if amount0_in != U256::ZERO {
         ExchangeRouter::sendTokensCall {
             token: base_address,
             receiver: pools[0].bank,
             amount: amount0_in,
         }
-   } else {
+    } else {
          ExchangeRouter::sendTokensCall {
             token: meme_address,
             receiver: pools[0].bank,
             amount: amount1_in,
         }   
-   };
+    };
 
-   let params_swap = SwapUtils::SwapParams{
+    let params_swap = SwapUtils::SwapParams{
         token0: base_address,
         token1: meme_address,
         amount0In: amount0_in,
@@ -312,7 +291,6 @@ where
     let call_build = exchange_router.multicall(multicall_args);
     let mut tx = call_build.into_transaction_request();
     let result = utils::send_transaction(
-        //Arc::new(client.clone()),
         state.client.clone(),
         owner,
         tx, 
@@ -343,19 +321,6 @@ pub async fn get_pool<P>(
 where
     P: Provider<Ethereum> + Send + Sync + 'static, // Ensure the correct provider is passed
 {
-   // let signer: PrivateKeySigner = keypair::load_signer_from_file(".env").expect("Failed to load PrivateKeySigner");
-   // let wallet = EthereumWallet::from(signer.clone());
-   // let owner = wallet.default_signer().address();
-   // let rpc = Url::parse(constants::BASE_SEPOLIA).map_err(|e| e.to_string())?;
-   // //let client = ProviderBuilder::new().with_cached_nonce_management().wallet(wallet.clone()).on_http(rpc);
-   // let client = ProviderBuilder::new().wallet(wallet.clone()).on_http(rpc);
-   // let contracts = contracts::load_contracts("deployments/contracts.json");
-
-   // let data_store_address = contracts::get_contract_address(&contracts, "DataStore").unwrap();
-   // let reader_address = contracts::get_contract_address(&contracts, "Reader").unwrap();
-   // let base_address = contracts::get_contract_address(&contracts, "USDT").unwrap();
-   // let meme_address = Address::from_str(meme.as_str()).unwrap();
-
    let data_store_address = state.data_store_address;
    let reader_address = state.reader_address;
    let base_address = state.base_address; 

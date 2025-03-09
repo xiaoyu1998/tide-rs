@@ -57,7 +57,6 @@ where
         })
     }
 }
-
  
 async fn buy_handler<P>(
     state: Arc<RouterState<P>>, 
@@ -94,8 +93,6 @@ where
         }
     }
 }
-
-
 
 // Sell handler function
 async fn sell_handler<P>(
@@ -179,9 +176,7 @@ where
 }
 
 pub async fn start(network:String, market:String) {
-    // let network = "base";
-    // let market = "marginmm";
-
+    
     let signer = keypair::load_signer_from_file(".env").map_err(|e| e.to_string()).unwrap();
     let wallet = EthereumWallet::from(signer.clone());
     let owner = wallet.default_signer().address();
